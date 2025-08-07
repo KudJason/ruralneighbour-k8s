@@ -1,0 +1,6 @@
+# Payment Service Specific Dependencies
+# Common dependencies are managed by the main pyproject.toml
+
+# Payment Processing
+stripe==8.10.0 ; python_version >= "3.10"
+paypalrestsdk==1.13.1 ; python_version >= "3.10"

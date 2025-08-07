@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: request-service
+  namespace: default
+  labels:
+    app: request-service
+    tier: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: request-service
+  template:
+    metadata:
+      labels:
+        app: request-service
+    spec:
+      containers:
+      - name: request-service
+        image: neighbor-connect/request-service:latest
+        ports:
+        - containerPort: 80
+        env:
+        # Database configuration
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: postgres-user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: postgres-password
+        - name: POSTGRES_HOST
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: postgres-host
+        - name: POSTGRES_PORT
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: postgres-port
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-config
+              key: request-db
+        # Redis configuration
+        - name: REDIS_URL
+          value: "redis://$(REDIS_HOST):$(REDIS_PORT)"
+        - name: REDIS_HOST
+          valueFrom:
+            secretKeyRef:
+              name: redis-secrets
+              key: redis-host
+        - name: REDIS_PORT
+          valueFrom:
+            secretKeyRef:
+              name: redis-secrets
+              key: redis-port
+        # JWT configuration
+        - name: SECRET_KEY
+          value: "your-secret-key-change-in-production"
+        - name: ALGORITHM
+          value: "HS256"
+        - name: ACCESS_TOKEN_EXPIRE_MINUTES
+          value: "30"
+        # Service configuration
+        - name: MAX_REQUESTS_PER_USER
+          value: "5"
+        - name: SERVICE_RADIUS_MILES
+          value: "2.0"
+        - name: REQUEST_EXPIRY_HOURS
+          value: "24"
+        # Service URLs
+        - name: AUTH_SERVICE_URL
+          value: "http://auth-service:80"
+        - name: USER_SERVICE_URL
+          value: "http://user-service:80"
+        - name: PAYMENT_SERVICE_URL
+          value: "http://payment-service:80"
+        - name: NOTIFICATION_SERVICE_URL
+          value: "http://notification-service:80"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      imagePullSecrets:
+      - name: regcred
+

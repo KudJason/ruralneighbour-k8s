@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: default
+  labels:
+    app: payment-service
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      containers:
+      - name: payment-service
+        image: neighbor-connect/payment-service:latest
+        ports:
+        - containerPort: 80
+        env:
+        # Database configuration
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: postgres-user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: postgres-password
+        - name: POSTGRES_HOST
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: postgres-host
+        - name: POSTGRES_PORT
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: postgres-port
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-config
+              key: payment-db
+        # Redis configuration
+        - name: REDIS_URL
+          value: "redis://$(REDIS_HOST):$(REDIS_PORT)"
+        - name: REDIS_HOST
+          valueFrom:
+            secretKeyRef:
+              name: redis-secrets
+              key: redis-host
+        - name: REDIS_PORT
+          valueFrom:
+            secretKeyRef:
+              name: redis-secrets
+              key: redis-port
+        # JWT configuration
+        - name: SECRET_KEY
+          value: "your-secret-key-change-in-production"
+        - name: ALGORITHM
+          value: "HS256"
+        # Payment configuration
+        - name: STRIPE_SECRET_KEY
+          value: "sk_test_your_stripe_secret_key"
+        - name: STRIPE_PUBLISHABLE_KEY
+          value: "pk_test_your_stripe_publishable_key"
+        - name: WEBHOOK_SECRET
+          value: "whsec_your_webhook_secret"
+        # Service URLs
+        - name: AUTH_SERVICE_URL
+          value: "http://auth-service:80"
+        - name: REQUEST_SERVICE_URL
+          value: "http://request-service:80"
+        - name: NOTIFICATION_SERVICE_URL
+          value: "http://notification-service:80"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      imagePullSecrets:
+      - name: regcred
+
