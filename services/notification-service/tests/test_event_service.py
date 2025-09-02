@@ -80,6 +80,32 @@ class TestEventService:
             "report_id": "550e8400-e29b-41d4-a716-446655440001",
         }
 
+    @pytest.fixture
+    def payment_refunded_event_data(self):
+        """Sample PaymentRefunded event data"""
+        return {
+            "user_id": "550e8400-e29b-41d4-a716-446655440000",
+            "amount": 50.00,
+        }
+
+    @pytest.fixture
+    def dispute_resolved_event_data(self):
+        """Sample DisputeResolved event data"""
+        return {
+            "user_id": "550e8400-e29b-41d4-a716-446655440000",
+            "dispute_id": "550e8400-e29b-41d4-a716-446655440003",
+            "outcome": "resolved in your favor",
+        }
+
+    @pytest.fixture
+    def rating_created_event_data(self):
+        """Sample RatingCreated event data"""
+        return {
+            "rated_user_id": "550e8400-e29b-41d4-a716-446655440000",
+            "rating_value": 5,
+            "request_id": "550e8400-e29b-41d4-a716-446655440004",
+        }
+
     def test_handle_user_registered(self, db_session, user_registered_event_data):
         """Test handling UserRegistered event"""
         notification_id = EventService.handle_user_registered(
@@ -230,6 +256,48 @@ class TestEventService:
         notification = NotificationService.get_notification(db_session, notification_id)
         assert notification is not None
         assert notification.title == "Safety Report Filed"
+
+    def test_handle_payment_refunded(self, db_session, payment_refunded_event_data):
+        """Test handling PaymentRefunded event"""
+        notification_id = EventService.handle_payment_refunded(
+            db_session, payment_refunded_event_data
+        )
+
+        assert notification_id is not None
+
+        from app.services.notification_service import NotificationService
+
+        notification = NotificationService.get_notification(db_session, notification_id)
+        assert notification is not None
+        assert notification.title == "Payment Refunded"
+
+    def test_handle_dispute_resolved(self, db_session, dispute_resolved_event_data):
+        """Test handling DisputeResolved event"""
+        notification_id = EventService.handle_dispute_resolved(
+            db_session, dispute_resolved_event_data
+        )
+
+        assert notification_id is not None
+
+        from app.services.notification_service import NotificationService
+
+        notification = NotificationService.get_notification(db_session, notification_id)
+        assert notification is not None
+        assert notification.title == "Dispute Resolved"
+
+    def test_handle_rating_created(self, db_session, rating_created_event_data):
+        """Test handling RatingCreated event"""
+        notification_id = EventService.handle_rating_created(
+            db_session, rating_created_event_data
+        )
+
+        assert notification_id is not None
+
+        from app.services.notification_service import NotificationService
+
+        notification = NotificationService.get_notification(db_session, notification_id)
+        assert notification is not None
+        assert notification.title == "New Rating Received"
 
     def test_handle_event_with_missing_data(self, db_session):
         """Test handling event with missing data"""

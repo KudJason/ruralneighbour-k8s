@@ -1,13 +1,15 @@
-from typing import Dict, Any, Optional
-from sqlalchemy.orm import Session
-from app.services.notification_service import NotificationService
+import logging
+from typing import Any, Dict, Optional, cast
+
+from app.core.config import settings
 from app.schemas.notification import (
+    DeliveryMethod,
     NotificationCreate,
     NotificationType,
-    DeliveryMethod,
 )
-from app.core.config import settings
-import logging
+from app.services.notification_service import NotificationService
+from pydantic import UUID4
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +23,10 @@ class EventService:
     ) -> Optional[str]:
         """Handle UserRegistered event - send welcome email"""
         try:
-            user_id = event_data.get("user_id")
+            user_id_raw = event_data.get("user_id")
+            if not user_id_raw:
+                raise ValueError("Missing user_id")
+            user_id = cast(UUID4, user_id_raw)
             email = event_data.get("email")
             name = event_data.get("name", "User")
 
@@ -49,7 +54,10 @@ class EventService:
     ) -> Optional[str]:
         """Handle ProfileUpdated event - notify user of profile changes"""
         try:
-            user_id = event_data.get("user_id")
+            user_id_raw = event_data.get("user_id")
+            if not user_id_raw:
+                raise ValueError("Missing user_id")
+            user_id = cast(UUID4, user_id_raw)
 
             notification_data = NotificationCreate(
                 user_id=user_id,
@@ -73,7 +81,10 @@ class EventService:
     def handle_mode_changed(db: Session, event_data: Dict[str, Any]) -> Optional[str]:
         """Handle ModeChanged event - notify user of role change"""
         try:
-            user_id = event_data.get("user_id")
+            user_id_raw = event_data.get("user_id")
+            if not user_id_raw:
+                raise ValueError("Missing user_id")
+            user_id = cast(UUID4, user_id_raw)
             new_mode = event_data.get("new_mode", "NIN")
 
             notification_data = NotificationCreate(
@@ -100,8 +111,11 @@ class EventService:
     ) -> Optional[str]:
         """Handle ServiceRequestCreated event - notify nearby providers"""
         try:
-            requester_id = event_data.get("requester_id")
-            request_id = event_data.get("request_id")
+            requester_id_raw = event_data.get("requester_id")
+            if not requester_id_raw:
+                raise ValueError("Missing requester_id")
+            requester_id = cast(UUID4, requester_id_raw)
+            request_id = cast(Optional[UUID4], event_data.get("request_id"))
             service_type = event_data.get("service_type", "service")
 
             notification_data = NotificationCreate(
@@ -129,9 +143,13 @@ class EventService:
     ) -> Optional[str]:
         """Handle ServiceCompleted event - notify requester and provider"""
         try:
-            requester_id = event_data.get("requester_id")
-            provider_id = event_data.get("provider_id")
-            request_id = event_data.get("request_id")
+            requester_id_raw = event_data.get("requester_id")
+            provider_id_raw = event_data.get("provider_id")
+            if not requester_id_raw or not provider_id_raw:
+                raise ValueError("Missing requester_id or provider_id")
+            requester_id = cast(UUID4, requester_id_raw)
+            provider_id = cast(UUID4, provider_id_raw)
+            request_id = cast(Optional[UUID4], event_data.get("request_id"))
 
             # Notify requester
             requester_notification = NotificationCreate(
@@ -175,8 +193,12 @@ class EventService:
     ) -> Optional[str]:
         """Handle PaymentProcessed event - send payment confirmation"""
         try:
-            payer_id = event_data.get("payer_id")
-            payee_id = event_data.get("payee_id")
+            payer_id_raw = event_data.get("payer_id")
+            payee_id_raw = event_data.get("payee_id")
+            if not payer_id_raw or not payee_id_raw:
+                raise ValueError("Missing payer_id or payee_id")
+            payer_id = cast(UUID4, payer_id_raw)
+            payee_id = cast(UUID4, payee_id_raw)
             amount = event_data.get("amount", 0)
 
             # Notify payer
@@ -217,7 +239,10 @@ class EventService:
     def handle_payment_failed(db: Session, event_data: Dict[str, Any]) -> Optional[str]:
         """Handle PaymentFailed event - alert user of payment failure"""
         try:
-            user_id = event_data.get("user_id")
+            user_id_raw = event_data.get("user_id")
+            if not user_id_raw:
+                raise ValueError("Missing user_id")
+            user_id = cast(UUID4, user_id_raw)
             amount = event_data.get("amount", 0)
 
             notification_data = NotificationCreate(
@@ -242,8 +267,11 @@ class EventService:
     def handle_dispute_opened(db: Session, event_data: Dict[str, Any]) -> Optional[str]:
         """Handle DisputeOpened event - notify involved parties and admins"""
         try:
-            user_id = event_data.get("user_id")
-            dispute_id = event_data.get("dispute_id")
+            user_id_raw = event_data.get("user_id")
+            if not user_id_raw:
+                raise ValueError("Missing user_id")
+            user_id = cast(UUID4, user_id_raw)
+            dispute_id = cast(Optional[UUID4], event_data.get("dispute_id"))
 
             notification_data = NotificationCreate(
                 user_id=user_id,
@@ -270,8 +298,11 @@ class EventService:
     ) -> Optional[str]:
         """Handle SafetyReportFiled event - alert admins of new safety report"""
         try:
-            reporter_id = event_data.get("reporter_id")
-            report_id = event_data.get("report_id")
+            reporter_id_raw = event_data.get("reporter_id")
+            if not reporter_id_raw:
+                raise ValueError("Missing reporter_id")
+            reporter_id = cast(UUID4, reporter_id_raw)
+            report_id = cast(Optional[UUID4], event_data.get("report_id"))
 
             notification_data = NotificationCreate(
                 user_id=reporter_id,
@@ -290,4 +321,102 @@ class EventService:
 
         except Exception as e:
             logger.error(f"Error handling SafetyReportFiled event: {e}")
+            return None
+
+    @staticmethod
+    def handle_payment_refunded(
+        db: Session, event_data: Dict[str, Any]
+    ) -> Optional[str]:
+        """Handle PaymentRefunded event - notify user of refund processing"""
+        try:
+            user_id_raw = event_data.get("user_id")
+            if not user_id_raw:
+                raise ValueError("Missing user_id")
+            user_id = cast(UUID4, user_id_raw)
+            amount = event_data.get("amount", 0)
+
+            notification_data = NotificationCreate(
+                user_id=user_id,
+                notification_type=NotificationType.PAYMENT_REFUNDED,
+                title="Payment Refunded",
+                content=f"Your refund of ${amount} is being processed.",
+                delivery_method=DeliveryMethod.EMAIL,
+            )
+
+            notification = NotificationService.create_notification(
+                db, notification_data
+            )
+            logger.info(f"Payment refunded notification created for user {user_id}")
+            return str(notification.notification_id)
+
+        except Exception as e:
+            logger.error(f"Error handling PaymentRefunded event: {e}")
+            return None
+
+    @staticmethod
+    def handle_dispute_resolved(
+        db: Session, event_data: Dict[str, Any]
+    ) -> Optional[str]:
+        """Handle DisputeResolved event - notify involved parties of resolution outcome"""
+        try:
+            user_id_raw = event_data.get("user_id")
+            if not user_id_raw:
+                raise ValueError("Missing user_id")
+            user_id = cast(UUID4, user_id_raw)
+            dispute_id = cast(Optional[UUID4], event_data.get("dispute_id"))
+            outcome = event_data.get("outcome", "resolved")
+
+            notification_data = NotificationCreate(
+                user_id=user_id,
+                notification_type=NotificationType.DISPUTE_RESOLVED,
+                title="Dispute Resolved",
+                content=f"Your dispute has been {outcome}.",
+                related_id=dispute_id,
+                delivery_method=DeliveryMethod.IN_APP,
+            )
+
+            notification = NotificationService.create_notification(
+                db, notification_data
+            )
+            logger.info(f"Dispute resolved notification created for user {user_id}")
+            return str(notification.notification_id)
+
+        except Exception as e:
+            logger.error(f"Error handling DisputeResolved event: {e}")
+            return None
+
+    @staticmethod
+    def handle_rating_created(db: Session, event_data: Dict[str, Any]) -> Optional[str]:
+        """Handle RatingCreated event - notify rated user of new rating"""
+        try:
+            rated_user_id_raw = event_data.get("rated_user_id")
+            if not rated_user_id_raw:
+                raise ValueError("Missing rated_user_id")
+            rated_user_id = cast(UUID4, rated_user_id_raw)
+            rating_value = event_data.get("rating_value")
+            request_id = cast(Optional[UUID4], event_data.get("request_id"))
+
+            content_text = (
+                f"You received a new rating of {rating_value}."
+                if rating_value is not None
+                else "You received a new rating."
+            )
+
+            notification_data = NotificationCreate(
+                user_id=rated_user_id,
+                notification_type=NotificationType.RATING_CREATED,
+                title="New Rating Received",
+                content=content_text,
+                related_id=request_id,
+                delivery_method=DeliveryMethod.IN_APP,
+            )
+
+            notification = NotificationService.create_notification(
+                db, notification_data
+            )
+            logger.info(f"Rating created notification for rated_user {rated_user_id}")
+            return str(notification.notification_id)
+
+        except Exception as e:
+            logger.error(f"Error handling RatingCreated event: {e}")
             return None

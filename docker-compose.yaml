@@ -39,14 +39,22 @@ services:
     ports:
       - "8001:8000"
     environment:
+      # Database connection (used by the application)
       - POSTGRES_SERVER=postgres
       - POSTGRES_USER=devuser
       - POSTGRES_PASSWORD=devpass
       - POSTGRES_DB=devdb
       - POSTGRES_PORT=5432
+      # Construct full database URL for framework
+      - DATABASE_URL=postgresql+asyncpg://devuser:devpass@postgres:5432/devdb
+      # Redis configuration
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_URL=redis://redis:6379/0
+      # Service-specific settings
+      - MAX_REQUESTS_PER_USER=5
+      - SERVICE_RADIUS_MILES=2.0
+      - REQUEST_EXPIRY_HOURS=24
     depends_on:
       postgres:
         condition: service_healthy

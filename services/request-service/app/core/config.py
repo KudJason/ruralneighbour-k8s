@@ -27,7 +27,6 @@ AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://localhost:8001")
 USER_SERVICE_URL = os.getenv("USER_SERVICE_URL", "http://localhost:8002")
 PAYMENT_SERVICE_URL = os.getenv("PAYMENT_SERVICE_URL", "http://localhost:8005")
 
-
 class Settings:
     DATABASE_URL: str = DATABASE_URL
     REDIS_URL: str = REDIS_URL
@@ -43,11 +42,4 @@ class Settings:
     SERVICE_RADIUS_MILES: float = SERVICE_RADIUS_MILES
     REQUEST_EXPIRY_HOURS: int = REQUEST_EXPIRY_HOURS
 
-
 settings = Settings()
-
-# For backward compatibility - some tests expect engine to be importable
-try:
-    from app.db.base import engine
-except ImportError:
-    engine = None

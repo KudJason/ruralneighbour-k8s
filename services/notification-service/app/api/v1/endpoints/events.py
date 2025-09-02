@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Header
-from sqlalchemy.orm import Session
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
 from app.api.deps import get_db_session, require_admin_auth
 from app.services.event_service import EventService
+from fastapi import APIRouter, Depends, Header, HTTPException, status
+from sqlalchemy.orm import Session
 
 router = APIRouter()
 
@@ -184,4 +185,64 @@ async def handle_safety_report_filed(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create safety report notification",
+        )
+
+
+@router.post("/events/payment-refunded", tags=["events"])
+async def handle_payment_refunded(
+    event_data: Dict[str, Any],
+    db: Session = Depends(get_db_session),
+    authorization: Optional[str] = Header(None),
+):
+    """Handle PaymentRefunded event"""
+    # Verify authentication
+    require_admin_auth(authorization)
+
+    notification_id = EventService.handle_payment_refunded(db, event_data)
+    if notification_id:
+        return {"notification_id": notification_id, "status": "created"}
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create payment refunded notification",
+        )
+
+
+@router.post("/events/dispute-resolved", tags=["events"])
+async def handle_dispute_resolved(
+    event_data: Dict[str, Any],
+    db: Session = Depends(get_db_session),
+    authorization: Optional[str] = Header(None),
+):
+    """Handle DisputeResolved event"""
+    # Verify authentication
+    require_admin_auth(authorization)
+
+    notification_id = EventService.handle_dispute_resolved(db, event_data)
+    if notification_id:
+        return {"notification_id": notification_id, "status": "created"}
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create dispute resolved notification",
+        )
+
+
+@router.post("/events/rating-created", tags=["events"])
+async def handle_rating_created(
+    event_data: Dict[str, Any],
+    db: Session = Depends(get_db_session),
+    authorization: Optional[str] = Header(None),
+):
+    """Handle RatingCreated event"""
+    # Verify authentication
+    require_admin_auth(authorization)
+
+    notification_id = EventService.handle_rating_created(db, event_data)
+    if notification_id:
+        return {"notification_id": notification_id, "status": "created"}
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create rating created notification",
         )

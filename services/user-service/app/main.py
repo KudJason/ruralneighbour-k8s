@@ -1,7 +1,9 @@
+import asyncio
+
 from fastapi import FastAPI
+
 from .api.v1.endpoints import profiles, users
 from .services.event_consumer import EventConsumer
-import asyncio
 
 app = FastAPI(title="User Service", version="1.0.0")
 
@@ -21,3 +23,22 @@ async def startup_event():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "service": "user-service"}
+
+
+@app.get("/")
+async def root():
+    return {"message": "User Service is running"}
+
+
+@app.get("/info")
+async def info():
+    return {
+        "service": "User Service",
+        "version": "1.0.0",
+        "features": [
+            "User profiles",
+            "User directory",
+            "Event consumer",
+        ],
+        "configuration": {},
+    }

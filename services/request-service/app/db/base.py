@@ -1,29 +1,21 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 import os
 
-# Get database URL from environment variable
-# For production: DATABASE_URL=postgresql://user:password@host:port/dbname
-# For testing: DATABASE_URL=sqlite:///./test.db
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", "postgresql://devuser:devpass@postgres:5432/request_service"
-)
+# Get database URL from environment variable or use SQLite for testing
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test.db")
 
 # Create SQLAlchemy engine
-if "sqlite" in DATABASE_URL:
-    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-else:
-    engine = create_engine(DATABASE_URL)
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
+)
 
 # Create SessionLocal class
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Import Base class
-from app.db.base_class import Base
-
-# Import all models to register them with SQLAlchemy
-from app.models.service_request import ServiceRequest, ServiceAssignment, Rating
-
+# Create Base class
+Base = declarative_base()
 
 # Dependency to get DB session
 def get_db():
