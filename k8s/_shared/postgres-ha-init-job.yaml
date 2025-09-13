@@ -1,0 +1,44 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rn-pg-init
+  namespace: default
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: init-db
+          image: postgres:16
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-password
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              psql -h postgres-service -U neighbor -p 5432 -d postgres <<'SQL'
+              DO $$
+              BEGIN
+                PERFORM 1 FROM pg_database WHERE datname='auth_db';
+                IF NOT FOUND THEN EXECUTE 'CREATE DATABASE auth_db OWNER neighbor'; END IF;
+                PERFORM 1 FROM pg_database WHERE datname='user_db';
+                IF NOT FOUND THEN EXECUTE 'CREATE DATABASE user_db OWNER neighbor'; END IF;
+                PERFORM 1 FROM pg_database WHERE datname='location_db';
+                IF NOT FOUND THEN EXECUTE 'CREATE DATABASE location_db OWNER neighbor'; END IF;
+                PERFORM 1 FROM pg_database WHERE datname='request_db';
+                IF NOT FOUND THEN EXECUTE 'CREATE DATABASE request_db OWNER neighbor'; END IF;
+                PERFORM 1 FROM pg_database WHERE datname='payment_db';
+                IF NOT FOUND THEN EXECUTE 'CREATE DATABASE payment_db OWNER neighbor'; END IF;
+                PERFORM 1 FROM pg_database WHERE datname='notification_db';
+                IF NOT FOUND THEN EXECUTE 'CREATE DATABASE notification_db OWNER neighbor'; END IF;
+                PERFORM 1 FROM pg_database WHERE datname='content_db';
+                IF NOT FOUND THEN EXECUTE 'CREATE DATABASE content_db OWNER neighbor'; END IF;
+                PERFORM 1 FROM pg_database WHERE datname='safety_db';
+                IF NOT FOUND THEN EXECUTE 'CREATE DATABASE safety_db OWNER neighbor'; END IF;
+              END$$;
+              SQL
+

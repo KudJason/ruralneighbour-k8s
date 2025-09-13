@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rn-pg
+  namespace: default
+  labels:
+    app: rn-pg
+    cluster-name: rn-pg
+spec:
+  serviceName: rn-pg
+  replicas: 3
+  selector:
+    matchLabels:
+      app: rn-pg
+      cluster-name: rn-pg
+  template:
+    metadata:
+      labels:
+        app: rn-pg
+        cluster-name: rn-pg
+    spec:
+      serviceAccountName: rn-pg-sa
+      containers:
+        - name: postgres
+          image: ghcr.io/zalando/spilo-16:3.3-p1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: PATRONI_SCOPE
+              value: rn-pg
+            - name: PATRONI_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: PATRONI_KUBERNETES_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: PATRONI_KUBERNETES_LABELS
+              value: '{"cluster-name":"rn-pg"}'
+            - name: PATRONI_SUPERUSER_USERNAME
+              value: neighbor
+            - name: PATRONI_SUPERUSER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-password
+            - name: PATRONI_REPLICATION_USERNAME
+              value: standby
+            - name: PATRONI_REPLICATION_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-password
+          volumeMounts:
+            - name: pgdata
+              mountPath: /home/postgres/pgdata
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - rn-pg
+              topologyKey: kubernetes.io/hostname
+  volumeClaimTemplates:
+    - metadata:
+        name: pgdata
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rn-pg
+  namespace: default
+  labels:
+    app: rn-pg
+    cluster-name: rn-pg
+spec:
+  clusterIP: None
+  ports:
+    - port: 5432
+      targetPort: 5432
+      name: postgres
+  selector:
+    app: rn-pg
+    cluster-name: rn-pg
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-replicas
+  namespace: default
+  labels:
+    app: rn-pg
+    tier: database
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+      protocol: TCP
+      name: postgres
+  selector:
+    cluster-name: rn-pg
+    spilo-role: replica

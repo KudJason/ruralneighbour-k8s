@@ -17,79 +17,81 @@ spec:
         app: location-service
     spec:
       containers:
-      - name: location-service
-        image: neighbor-connect/location-service:latest
-        ports:
-        - containerPort: 80
-        env:
-        # Database configuration
-        - name: DATABASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: postgres-secrets
-              key: postgres-user
-        - name: POSTGRES_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: postgres-secrets
-              key: postgres-password
-        - name: POSTGRES_HOST
-          valueFrom:
-            secretKeyRef:
-              name: postgres-secrets
-              key: postgres-host
-        - name: POSTGRES_PORT
-          valueFrom:
-            secretKeyRef:
-              name: postgres-secrets
-              key: postgres-port
-        - name: POSTGRES_DB
-          valueFrom:
-            configMapKeyRef:
-              name: postgres-config
-              key: location-db
-        # Redis configuration
-        - name: REDIS_URL
-          value: "redis://$(REDIS_HOST):$(REDIS_PORT)"
-        - name: REDIS_HOST
-          valueFrom:
-            secretKeyRef:
-              name: redis-secrets
-              key: redis-host
-        - name: REDIS_PORT
-          valueFrom:
-            secretKeyRef:
-              name: redis-secrets
-              key: redis-port
-        # JWT configuration
-        - name: SECRET_KEY
-          value: "your-secret-key-change-in-production"
-        - name: ALGORITHM
-          value: "HS256"
-        # Service URLs
-        - name: AUTH_SERVICE_URL
-          value: "http://auth-service:80"
-        - name: USER_SERVICE_URL
-          value: "http://user-service:80"
-        resources:
-          requests:
-            memory: "128Mi"
-            cpu: "100m"
-          limits:
-            memory: "256Mi"
-            cpu: "200m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 80
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 80
-          initialDelaySeconds: 5
-          periodSeconds: 5
+        - name: location-service
+          image: neighbor-connect/location-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            # Database configuration
+            - name: DATABASE_URL
+              value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/$(POSTGRES_DB)"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-password
+            - name: POSTGRES_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-host
+            - name: POSTGRES_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-port
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-config
+                  key: location-db
+            # Redis configuration
+            - name: REDIS_URL
+              value: "redis://$(REDIS_HOST):$(REDIS_PORT)"
+            - name: REDIS_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: redis-secrets
+                  key: redis-host
+            - name: REDIS_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: redis-secrets
+                  key: redis-port
+            # JWT configuration
+            - name: SECRET_KEY
+              value: "your-secret-key-change-in-production"
+            - name: ALGORITHM
+              value: "HS256"
+            # Service URLs
+            - name: AUTH_SERVICE_URL
+              value: "http://auth-service:80"
+            - name: USER_SERVICE_URL
+              value: "http://user-service:80"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
       imagePullSecrets:
-      - name: regcred
-
+        - name: regcred

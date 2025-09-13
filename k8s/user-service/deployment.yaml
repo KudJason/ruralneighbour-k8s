@@ -20,106 +20,106 @@ spec:
         version: v1
     spec:
       containers:
-      - name: user-service
-        image: neighbor-connect/user-service:latest
-        ports:
-        - containerPort: 8000
-        env:
-        # Database configuration for PostgreSQL
-        - name: POSTGRES_USER
-          valueFrom:
-            secretKeyRef:
-              name: postgres-secrets
-              key: postgres-user
-        - name: POSTGRES_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: postgres-secrets
-              key: postgres-password
-        - name: POSTGRES_HOST
-          valueFrom:
-            secretKeyRef:
-              name: postgres-secrets
-              key: postgres-host
-        - name: POSTGRES_PORT
-          valueFrom:
-            secretKeyRef:
-              name: postgres-secrets
-              key: postgres-port
-        - name: POSTGRES_DB
-          valueFrom:
-            configMapKeyRef:
-              name: postgres-config
-              key: user-db
-        - name: DATABASE_URL
-          value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/$(POSTGRES_DB)"
-        # Redis configuration for event pub/sub
-        - name: REDIS_HOST
-          valueFrom:
-            secretKeyRef:
-              name: redis-secrets
-              key: redis-host
-        - name: REDIS_PORT
-          valueFrom:
-            secretKeyRef:
-              name: redis-secrets
-              key: redis-port
-        - name: REDIS_URL
-          value: "redis://$(REDIS_HOST):$(REDIS_PORT)"
-        # Event streams configuration
-        - name: USER_LIFECYCLE_STREAM
-          valueFrom:
-            configMapKeyRef:
-              name: redis-config
-              key: user-lifecycle-stream
-        - name: SERVICE_LIFECYCLE_STREAM
-          valueFrom:
-            configMapKeyRef:
-              name: redis-config
-              key: service-lifecycle-stream
-        # JWT configuration for token validation
-        - name: SECRET_KEY
-          valueFrom:
-            secretKeyRef:
-              name: auth-secrets
-              key: jwt-secret-key
-        - name: ALGORITHM
-          value: "HS256"
-        # Environment
-        - name: ENVIRONMENT
-          value: "production"
-        resources:
-          requests:
-            memory: "128Mi"
-            cpu: "100m"
-          limits:
-            memory: "512Mi"
-            cpu: "300m"
-        livenessProbe:
-          httpGet:
-            path: /api/v1/users/health
-            port: 8000
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
-        readinessProbe:
-          httpGet:
-            path: /api/v1/users/health
-            port: 8000
-          initialDelaySeconds: 10
-          periodSeconds: 5
-          timeoutSeconds: 3
-          failureThreshold: 2
-        startupProbe:
-          httpGet:
-            path: /api/v1/users/health
-            port: 8000
-          initialDelaySeconds: 10
-          periodSeconds: 10
-          timeoutSeconds: 3
-          failureThreshold: 10
+        - name: user-service
+          image: neighbor-connect/user-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            # Database configuration for PostgreSQL
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-password
+            - name: POSTGRES_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-host
+            - name: POSTGRES_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-port
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-config
+                  key: user-db
+            - name: DATABASE_URL
+              value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/$(POSTGRES_DB)"
+            # Redis configuration for event pub/sub
+            - name: REDIS_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: redis-secrets
+                  key: redis-host
+            - name: REDIS_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: redis-secrets
+                  key: redis-port
+            - name: REDIS_URL
+              value: "redis://$(REDIS_HOST):$(REDIS_PORT)"
+            # Event streams configuration
+            - name: USER_LIFECYCLE_STREAM
+              valueFrom:
+                configMapKeyRef:
+                  name: redis-config
+                  key: user-lifecycle-stream
+            - name: SERVICE_LIFECYCLE_STREAM
+              valueFrom:
+                configMapKeyRef:
+                  name: redis-config
+                  key: service-lifecycle-stream
+            # JWT configuration for token validation
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secrets
+                  key: jwt-secret-key
+            - name: ALGORITHM
+              value: "HS256"
+            # Environment
+            - name: ENVIRONMENT
+              value: "production"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "300m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 10
       imagePullSecrets:
-      - name: regcred
+        - name: regcred
       restartPolicy: Always
-

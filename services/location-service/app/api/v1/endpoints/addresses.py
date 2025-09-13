@@ -1,17 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from typing import List
 import uuid
+from typing import List
 
-from ...db.base import get_db
-from ...api.deps import get_current_user_id
-from ...schemas.address import (
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy.orm import Session
+
+from app.api.deps import get_current_user_id
+from app.db.base import get_db
+from app.crud.crud_address import address_crud
+from app.schemas.address import (
     AddressCreate,
+    AddressListResponse,
     AddressResponse,
     AddressUpdate,
-    AddressList,
 )
-from ...crud.crud_address import address_crud
 
 router = APIRouter()
 
@@ -37,10 +38,10 @@ def create_address(
         )
 
 
-@router.get("/addresses", response_model=AddressList)
+@router.get("/addresses", response_model=AddressListResponse)
 def list_addresses(
-    skip: int = status.Query(0, ge=0),
-    limit: int = status.Query(100, ge=1, le=100),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=100),
     db: Session = Depends(get_db),
     current_user_id: uuid.UUID = Depends(get_current_user_id),
 ):
@@ -50,7 +51,7 @@ def list_addresses(
     )
     total = address_crud.count_by_user(db=db, user_id=current_user_id)
 
-    return AddressList(
+    return AddressListResponse(
         addresses=addresses, total=total, page=skip // limit + 1, size=len(addresses)
     )
 
@@ -140,9 +141,9 @@ def get_primary_address(
 
 @router.get("/addresses/search/radius")
 def search_addresses_by_radius(
-    latitude: float = status.Query(..., ge=-90, le=90),
-    longitude: float = status.Query(..., ge=-180, le=180),
-    radius_miles: float = status.Query(10.0, ge=0.1, le=100.0),
+    latitude: float = Query(..., ge=-90, le=90),
+    longitude: float = Query(..., ge=-180, le=180),
+    radius_miles: float = Query(10.0, ge=0.1, le=100.0),
     db: Session = Depends(get_db),
     current_user_id: uuid.UUID = Depends(get_current_user_id),
 ):

@@ -1,20 +1,21 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 import time
+import uuid
 from typing import List
 
-from ...db.base import get_db
-from ...api.deps import get_current_user_id
-from ...schemas.location import (
-    LocationValidationRequest,
-    LocationValidationResponse,
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy.orm import Session
+
+from app.api.deps import get_current_user_id
+from app.db.base import get_db
+from app.core.config import settings
+from app.crud.crud_address import address_crud
+from app.schemas.location import (
     DistanceCalculationRequest,
     DistanceCalculationResponse,
+    LocationValidationRequest,
+    LocationValidationResponse,
 )
-from ...services.location_service import LocationService
-from ...core.config import settings
-import uuid
-from ...crud.crud_address import address_crud
+from app.services.location_service import LocationService
 
 router = APIRouter()
 
@@ -64,19 +65,19 @@ def validate_location(
 
 @router.get("/locations/distance", response_model=DistanceCalculationResponse)
 def calculate_distance(
-    lat1: float = status.Query(
+    lat1: float = Query(
         ..., ge=-90, le=90, description="Latitude of first point"
     ),
-    lon1: float = status.Query(
+    lon1: float = Query(
         ..., ge=-180, le=180, description="Longitude of first point"
     ),
-    lat2: float = status.Query(
+    lat2: float = Query(
         ..., ge=-90, le=90, description="Latitude of second point"
     ),
-    lon2: float = status.Query(
+    lon2: float = Query(
         ..., ge=-180, le=180, description="Longitude of second point"
     ),
-    unit: str = status.Query(
+    unit: str = Query(
         "miles", description="Distance unit: miles, kilometers, meters"
     ),
     db: Session = Depends(get_db),

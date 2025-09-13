@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: auth-health
+  namespace: default
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        job: auth-health
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: curl
+          image: curlimages/curl:8.8.0
+          args:
+            - sh
+            - -c
+            - >-
+              echo "Checking auth-service /health..." &&
+              for i in $(seq 1 30); do
+                code=$(curl -s -o /tmp/out -w "%{http_code}" http://auth-service/health) &&
+                echo "Attempt $i: HTTP $code" &&
+                if [ "$code" = "200" ] && grep -q healthy /tmp/out; then
+                  echo "Auth health OK" && exit 0;
+                fi;
+                sleep 2;
+              done;
+              echo "Auth health check failed" && cat /tmp/out && exit 1;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

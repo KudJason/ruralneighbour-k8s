@@ -21,3 +21,7 @@ async def root():
     return {"message": "Safety & Dispute Service is running"}
 
 
+@app.get("/health")
+async def health():
+    return {"status": "healthy"}
+

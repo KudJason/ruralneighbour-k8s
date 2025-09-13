@@ -32,6 +32,9 @@ kubectl apply -f user-service/
 kubectl apply -f location-service/
 kubectl apply -f request-service/
 kubectl apply -f payment-service/
+kubectl apply -f notification-service/
+kubectl apply -f content-service/
+kubectl apply -f safety-service/
 
 echo "⏳ Waiting for microservices to be ready..."
 kubectl wait --for=condition=ready pod -l app=auth-service --timeout=300s
@@ -39,6 +42,9 @@ kubectl wait --for=condition=ready pod -l app=user-service --timeout=300s
 kubectl wait --for=condition=ready pod -l app=location-service --timeout=300s
 kubectl wait --for=condition=ready pod -l app=request-service --timeout=300s
 kubectl wait --for=condition=ready pod -l app=payment-service --timeout=300s
+kubectl wait --for=condition=ready pod -l app=notification-service --timeout=300s
+kubectl wait --for=condition=ready pod -l app=content-service --timeout=300s
+kubectl wait --for=condition=ready pod -l app=safety-service --timeout=300s
 
 echo "🌐 Deploying API Gateway..."
 kubectl apply -f _shared/ingress.yaml
