@@ -1,0 +1,147 @@
+name: Build and Deploy to Remote Server
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: # 允许手动触发
+
+env:
+  REMOTE_HOST: home.worthwolf.top
+  REMOTE_USER: masterjia
+  REMOTE_PATH: /home/masterjia/ruralneighbour
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: |
+          python api_compatibility_test.py
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add server to known hosts
+        run: |
+          ssh-keyscan -H ${{ env.REMOTE_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Sync code to remote server
+        run: |
+          rsync -avz --delete \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='__pycache__' \
+            --exclude='*.pyc' \
+            --exclude='.env' \
+            --exclude='dist' \
+            --exclude='build' \
+            --exclude='*.log' \
+            ./ ${{ env.REMOTE_USER }}@${{ env.REMOTE_HOST }}:${{ env.REMOTE_PATH }}/ms-backend/
+
+      - name: Build and deploy on remote server
+        run: |
+          ssh ${{ env.REMOTE_USER }}@${{ env.REMOTE_HOST }} << 'EOF'
+            cd /home/masterjia/ruralneighbour/ms-backend
+            
+            echo "🔧 检查 MicroK8s 环境..."
+            if ! command -v microk8s &> /dev/null; then
+              echo "❌ MicroK8s 未安装，正在安装..."
+              sudo snap install microk8s --classic --channel=1.30/stable
+              sudo usermod -a -G microk8s $USER
+              echo "✅ MicroK8s 安装完成"
+            else
+              echo "✅ MicroK8s 已安装"
+            fi
+            
+            # 确保用户有 MicroK8s 权限
+            sudo usermod -a -G microk8s $USER
+            
+            echo "🚀 启动 MicroK8s..."
+            if ! microk8s status | grep -q "microk8s is running"; then
+              microk8s start
+            fi
+            
+            echo "🔧 启用必要的 MicroK8s 插件..."
+            microk8s enable dns storage ingress
+            
+            echo "⏳ 等待插件启动..."
+            sleep 30
+            
+            echo "🔨 构建 Docker 镜像..."
+            cd services
+            
+            # 生成依赖文件
+            ./export_requirements.bash
+            
+            # 构建所有服务的镜像
+            services=("auth-service" "user-service" "location-service" "request-service" "payment-service" "notification-service" "content-service" "safety-service")
+            
+            for service in "${services[@]}"; do
+              echo "🔨 构建 $service 镜像..."
+              cd $service
+              docker build -t neighbor-connect/$service:latest .
+              
+              # 导入到 MicroK8s
+              echo "📦 导入 $service 镜像到 MicroK8s..."
+              microk8s ctr images import - < $(docker save neighbor-connect/$service:latest)
+              cd ..
+            done
+            
+            echo "🚀 部署到 MicroK8s..."
+            cd ../k8s
+            
+            # 创建命名空间
+            microk8s kubectl create namespace ruralneighbour --dry-run=client -o yaml | microk8s kubectl apply -f -
+            
+             # 使用 Kustomize 部署
+             microk8s kubectl apply -k overlays/development/
+            
+            echo "⏳ 等待部署完成..."
+            microk8s kubectl wait --for=condition=ready pod -l tier=backend --timeout=300s -n ruralneighbour || true
+            
+            echo "🧪 运行部署测试..."
+            if [ -f "test_deployment.sh" ]; then
+              chmod +x test_deployment.sh
+              ./test_deployment.sh
+            fi
+            
+            echo "📊 显示部署状态..."
+            microk8s kubectl get pods -n ruralneighbour
+            microk8s kubectl get services -n ruralneighbour
+            microk8s kubectl get ingress -n ruralneighbour
+            
+            # 获取访问信息
+            MICROK8S_IP=$(microk8s kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+            echo "🌐 访问信息："
+            echo "  - MicroK8s IP: $MICROK8S_IP"
+            echo "  - API 文档: http://$MICROK8S_IP/api/v1/auth/docs"
+            echo "  - 健康检查: http://$MICROK8S_IP/api/v1/auth/health"
+            
+            echo "✅ 部署完成！"
+          EOF
+
+      - name: Notify deployment status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ 部署成功！"
+          else
+            echo "❌ 部署失败！"
+          fi

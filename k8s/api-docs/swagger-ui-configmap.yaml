@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-docs-config
+data:
+  swagger-config.json: |
+    {
+      "urls": [
+        { "name": "auth", "url": "/api/v1/auth/openapi.json" },
+        { "name": "users", "url": "/api/v1/users/openapi.json" },
+        { "name": "locations", "url": "/api/v1/locations/openapi.json" },
+        { "name": "requests", "url": "/api/v1/requests/openapi.json" },
+        { "name": "payments", "url": "/api/v1/payments/openapi.json" },
+        { "name": "notifications", "url": "/api/v1/notifications/openapi.json" },
+        { "name": "content", "url": "/api/v1/content/openapi.json" },
+        { "name": "safety", "url": "/api/v1/safety/openapi.json" }
+      ],
+      "urls.primaryName": "auth"
+    }

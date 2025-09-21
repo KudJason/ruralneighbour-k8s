@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Body
+import json
 from sqlalchemy.orm import Session
 from typing import Optional
 import uuid
@@ -14,6 +15,8 @@ from app.schemas.profile import (
     ProviderProfileUpdate,
     ModeSwitch,
 )
+# 移除手动映射函数，现在使用Pydantic的alias功能
+
 
 router = APIRouter()
 
@@ -38,13 +41,16 @@ async def get_my_profile(
         )
 
 
+# 移除手动映射函数，现在使用Pydantic的alias功能
+
+
 @router.patch("/me", response_model=UserProfileResponse)
 async def update_my_profile(
     profile_update: UserProfileUpdate,
     current_user_id: str = "123e4567-e89b-12d3-a456-426614174000",
     db: Session = Depends(get_db),
 ):
-    """Update current user's profile"""
+    """Update current user's profile with automatic field mapping."""
     try:
         user_id = uuid.UUID(current_user_id)
         updated_profile = ProfileCRUD.update_user_profile(db, user_id, profile_update)
@@ -132,7 +138,13 @@ async def update_provider_profile(
     current_user_id: str = "123e4567-e89b-12d3-a456-426614174000",
     db: Session = Depends(get_db),
 ):
-    """Update current user's provider profile"""
+    """Update current user's provider profile with automatic field mapping.
+
+    Automatic field mapping:
+    - services -> services_offered (JSON string)
+    - availability -> availability_schedule
+    - description -> vehicle_description
+    """
     try:
         user_id = uuid.UUID(current_user_id)
         updated_profile = ProfileCRUD.update_provider_profile(

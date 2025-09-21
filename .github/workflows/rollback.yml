@@ -1,0 +1,53 @@
+name: Rollback Deployment
+
+on:
+  workflow_dispatch: # 仅手动触发
+
+env:
+  REMOTE_HOST: home.worthwolf.top
+  REMOTE_USER: masterjia
+  REMOTE_PATH: /home/masterjia/ruralneighbour
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add server to known hosts
+        run: |
+          ssh-keyscan -H ${{ env.REMOTE_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Rollback deployment
+        run: |
+          ssh ${{ env.REMOTE_USER }}@${{ env.REMOTE_HOST }} << 'EOF'
+            cd /home/masterjia/ruralneighbour/ms-backend/k8s
+            
+            echo "🔄 回滚部署..."
+            microk8s kubectl rollout undo deployment/auth-service -n ruralneighbour
+            microk8s kubectl rollout undo deployment/user-service -n ruralneighbour
+            microk8s kubectl rollout undo deployment/request-service -n ruralneighbour
+            microk8s kubectl rollout undo deployment/location-service -n ruralneighbour
+            microk8s kubectl rollout undo deployment/payment-service -n ruralneighbour
+            microk8s kubectl rollout undo deployment/notification-service -n ruralneighbour
+            microk8s kubectl rollout undo deployment/content-service -n ruralneighbour
+            microk8s kubectl rollout undo deployment/safety-service -n ruralneighbour
+            
+            echo "⏳ 等待回滚完成..."
+            microk8s kubectl rollout status deployment/auth-service -n ruralneighbour
+            microk8s kubectl rollout status deployment/user-service -n ruralneighbour
+            microk8s kubectl rollout status deployment/request-service -n ruralneighbour
+            
+            echo "📊 显示回滚后状态..."
+            microk8s kubectl get pods -n ruralneighbour
+            
+            echo "✅ 回滚完成！"
+          EOF
+

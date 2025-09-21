@@ -1,0 +1,61 @@
+name: Quick Deploy (Code Sync Only)
+
+on:
+  workflow_dispatch: # 仅手动触发
+  push:
+    branches: [main]
+    paths:
+      - "k8s/**"
+      - "services/**/app/**"
+      - "services/**/requirements.txt"
+
+env:
+  REMOTE_HOST: home.worthwolf.top
+  REMOTE_USER: masterjia
+  REMOTE_PATH: /home/masterjia/ruralneighbour
+
+jobs:
+  quick-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add server to known hosts
+        run: |
+          ssh-keyscan -H ${{ env.REMOTE_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Sync code to remote server
+        run: |
+          rsync -avz --delete \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='__pycache__' \
+            --exclude='*.pyc' \
+            --exclude='.env' \
+            --exclude='dist' \
+            --exclude='build' \
+            --exclude='*.log' \
+            ./ ${{ env.REMOTE_USER }}@${{ env.REMOTE_HOST }}:${{ env.REMOTE_PATH }}/ms-backend/
+
+      - name: Quick deploy on remote server
+        run: |
+          ssh ${{ env.REMOTE_USER }}@${{ env.REMOTE_HOST }} << 'EOF'
+            cd /home/masterjia/ruralneighbour/ms-backend/k8s
+            
+             # 重新部署
+             microk8s kubectl apply -k overlays/development/
+            
+            # 重启服务
+            microk8s kubectl rollout restart deployment/auth-service -n ruralneighbour
+            microk8s kubectl rollout restart deployment/user-service -n ruralneighbour
+            microk8s kubectl rollout restart deployment/request-service -n ruralneighbour
+            
+            echo "✅ 快速部署完成！"
+          EOF

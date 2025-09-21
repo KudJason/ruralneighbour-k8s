@@ -16,6 +16,12 @@ from app.schemas.location import (
     LocationValidationResponse,
 )
 from app.services.location_service import LocationService
+from app.crud.crud_saved_location import saved_location_crud
+from app.schemas.saved_location import (
+    SavedLocationCreate,
+    SavedLocationResponse,
+    SavedLocationListResponse,
+)
 
 router = APIRouter()
 
@@ -65,17 +71,31 @@ def validate_location(
 
 @router.get("/locations/distance", response_model=DistanceCalculationResponse)
 def calculate_distance(
+    # Standard naming (optional to allow alias-only requests)
     lat1: float = Query(
-        ..., ge=-90, le=90, description="Latitude of first point"
+        None, ge=-90, le=90, description="Latitude of first point"
     ),
     lon1: float = Query(
-        ..., ge=-180, le=180, description="Longitude of first point"
+        None, ge=-180, le=180, description="Longitude of first point"
     ),
     lat2: float = Query(
-        ..., ge=-90, le=90, description="Latitude of second point"
+        None, ge=-90, le=90, description="Latitude of second point"
     ),
     lon2: float = Query(
-        ..., ge=-180, le=180, description="Longitude of second point"
+        None, ge=-180, le=180, description="Longitude of second point"
+    ),
+    # Alternate naming (optional)
+    from_lat: float = Query(
+        None, ge=-90, le=90, description="Alias: from latitude"
+    ),
+    from_lng: float = Query(
+        None, ge=-180, le=180, description="Alias: from longitude"
+    ),
+    to_lat: float = Query(
+        None, ge=-90, le=90, description="Alias: to latitude"
+    ),
+    to_lng: float = Query(
+        None, ge=-180, le=180, description="Alias: to longitude"
     ),
     unit: str = Query(
         "miles", description="Distance unit: miles, kilometers, meters"
@@ -99,8 +119,21 @@ def calculate_distance(
                 detail=f"Invalid unit. Must be one of: {', '.join(valid_units)}",
             )
 
+        # Prefer from*/to* if provided
+        _lat1 = from_lat if from_lat is not None else lat1
+        _lon1 = from_lng if from_lng is not None else lon1
+        _lat2 = to_lat if to_lat is not None else lat2
+        _lon2 = to_lng if to_lng is not None else lon2
+
+        # Ensure we have all coordinates
+        if None in (_lat1, _lon1, _lat2, _lon2):
+            raise HTTPException(
+                status_code=422,
+                detail="Missing required coordinates. Provide either lat1/lon1/lat2/lon2 or from_lat/from_lng/to_lat/to_lng.",
+            )
+
         distance_result = LocationService.calculate_distance(
-            lat1, lon1, lat2, lon2, unit
+            _lat1, _lon1, _lat2, _lon2, unit
         )
 
         # Check performance requirement (under 200ms)
@@ -186,3 +219,51 @@ def check_performance(
             if test.get("within_limit") != "Error"
         ),
     }
+
+
+@router.get("/locations/saved", response_model=SavedLocationListResponse)
+def get_saved_locations(
+    db: Session = Depends(get_db),
+    current_user_id: uuid.UUID = Depends(get_current_user_id),
+):
+    items = saved_location_crud.list_by_user(db=db, user_id=current_user_id)
+    return {"locations": items, "total": len(items)}
+
+
+@router.post("/locations/saved", response_model=SavedLocationResponse)
+def save_location(
+    payload: SavedLocationCreate,
+    db: Session = Depends(get_db),
+    current_user_id: uuid.UUID = Depends(get_current_user_id),
+):
+    item = saved_location_crud.create(
+        db=db,
+        user_id=current_user_id,
+        address=payload.address,
+        latitude=payload.latitude,
+        longitude=payload.longitude,
+        name=payload.name or payload.address,
+    )
+    # Coerce lat/lon back to float in response
+    return SavedLocationResponse(
+        location_id=item.location_id,
+        user_id=item.user_id,
+        name=item.name,
+        address=item.address,
+        latitude=float(payload.latitude),
+        longitude=float(payload.longitude),
+        created_at=item.created_at,
+        updated_at=item.updated_at,
+    )
+
+
+@router.delete("/locations/saved/{location_id}")
+def delete_saved_location(
+    location_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user_id: uuid.UUID = Depends(get_current_user_id),
+):
+    ok = saved_location_crud.delete(db=db, user_id=current_user_id, location_id=location_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Saved location not found")
+    return {"message": "Deleted"}

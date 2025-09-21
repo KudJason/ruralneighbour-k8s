@@ -3,10 +3,14 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.ext.declarative import declarative_base
 import os
 
-# Get database URL from environment variable
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", "postgresql://devuser:devpass@postgres:5432/locationdb"
-)
+# Choose database URL. In TESTING mode default to SQLite to avoid external deps
+if os.getenv("TESTING") == "true" and not os.getenv("DATABASE_URL"):
+    DATABASE_URL = "sqlite:///./test_location_service.db"
+else:
+    # Get database URL from environment variable
+    DATABASE_URL = os.getenv(
+        "DATABASE_URL", "postgresql://devuser:devpass@postgres:5432/locationdb"
+    )
 
 # Create SQLAlchemy engine with PostGIS support
 engine = create_engine(

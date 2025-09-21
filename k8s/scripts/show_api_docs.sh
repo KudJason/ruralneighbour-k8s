@@ -57,6 +57,9 @@ echo -e "${GREEN}🌐 Minikube IP: $MINIKUBE_IP${NC}"
 echo -e "${GREEN}🔗 API Base URL: $API_BASE${NC}"
 
 echo ""
+echo -e "${YELLOW}📚 Swagger UI Aggregator${NC}"
+echo "  Portal:       $BASE_URL/api-docs"
+echo ""
 echo -e "${YELLOW}📊 Service Status Summary${NC}"
 echo "========================"
 kubectl get pods | grep -E "(Running|CrashLoopBackOff|Error)" | awk '{print "  " $1 ": " $3}'
@@ -73,5 +76,7 @@ echo "  kubectl logs -l app=SERVICE_NAME --tail=50"
 echo ""
 echo "Restart service:"
 echo "  kubectl rollout restart deployment/SERVICE_NAME"
+
+
 
 

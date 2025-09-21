@@ -110,6 +110,12 @@ class NotificationService:
         return notification_crud.delete(db, notification_id)
 
     @staticmethod
+    def update_notification(db: Session, notification_id: str, notification_data: NotificationUpdate) -> Optional[NotificationResponse]:
+        """Update a notification"""
+        notification = notification_crud.update(db, notification_id, notification_data)
+        return NotificationResponse.model_validate(notification) if notification else None
+
+    @staticmethod
     def cleanup_old_notifications(db: Session, days: int = 90) -> int:
         """Delete notifications older than specified days"""
         return notification_crud.cleanup_old_notifications(db, days)

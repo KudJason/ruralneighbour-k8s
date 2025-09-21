@@ -161,6 +161,35 @@ class NotificationCRUD:
         db.commit()
         return True
 
+    def update(self, db: Session, notification_id: str, obj_in: NotificationUpdate) -> Optional[Notification]:
+        """Update a notification"""
+        db_obj = self.get(db, notification_id)
+        if not db_obj:
+            return None
+
+        # Update only provided fields
+        update_data = obj_in.model_dump(exclude_unset=True)
+        
+        # Handle is_read status update
+        if "is_read" in update_data:
+            db_obj.is_read = update_data["is_read"]
+            if update_data["is_read"]:
+                db_obj.read_at = datetime.utcnow()
+            else:
+                db_obj.read_at = None
+        
+        # Update other fields if provided
+        if "title" in update_data:
+            db_obj.title = update_data["title"]
+        if "content" in update_data:
+            db_obj.content = update_data["content"]
+        if "delivery_status" in update_data:
+            db_obj.delivery_status = update_data["delivery_status"].value if hasattr(update_data["delivery_status"], 'value') else update_data["delivery_status"]
+
+        db.commit()
+        db.refresh(db_obj)
+        return db_obj
+
     def cleanup_old_notifications(self, db: Session, days: int = 90) -> int:
         """Delete notifications older than specified days"""
         cutoff_date = datetime.utcnow() - timedelta(days=days)

@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api.v1.endpoints import news_articles, videos, system_settings
+from app.api.v1.endpoints import news_articles, videos, system_settings, news
 from app.core.config import settings
 from app.db.base import engine, Base
 import os
@@ -20,6 +20,7 @@ app = FastAPI(
 # Include routers
 app.include_router(news_articles.router, prefix="/api/v1", tags=["news_articles"])
 app.include_router(videos.router, prefix="/api/v1", tags=["videos"])
+app.include_router(news.router, prefix="/api/v1", tags=["news"])  # alias routes
 app.include_router(system_settings.router, prefix="/api/v1", tags=["system_settings"])
 
 

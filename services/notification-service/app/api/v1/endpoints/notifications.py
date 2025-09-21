@@ -5,6 +5,7 @@ from app.api.deps import get_db_session, require_admin_auth
 from app.services.notification_service import NotificationService
 from app.schemas.notification import (
     NotificationCreate,
+    NotificationUpdate,
     NotificationResponse,
     NotificationSummary,
 )
@@ -208,6 +209,25 @@ async def delete_notification(
     return {"message": "Notification deleted successfully"}
 
 
+@router.patch("/notifications/{notification_id}", response_model=NotificationResponse, tags=["notifications"])
+async def update_notification(
+    notification_id: str,
+    notification_data: NotificationUpdate,
+    db: Session = Depends(get_db_session),
+    authorization: Optional[str] = Header(None),
+):
+    """Update a notification"""
+    # Verify authentication
+    require_admin_auth(authorization)
+
+    notification = NotificationService.update_notification(db, notification_id, notification_data)
+    if not notification:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Notification not found"
+        )
+    return notification
+
+
 @router.delete("/notifications/cleanup", tags=["notifications"])
 async def cleanup_old_notifications(
     days: int = 90,
@@ -220,4 +240,36 @@ async def cleanup_old_notifications(
 
     count = NotificationService.cleanup_old_notifications(db, days)
     return {"notifications_deleted": count}
+
+
+# ========== Frontend Compatibility Endpoints ==========
+
+@router.post("/notifications/mark_all_read", tags=["notifications"])
+async def mark_all_notifications_read_for_frontend(
+    db: Session = Depends(get_db_session),
+    authorization: Optional[str] = Header(None),
+):
+    """Mark all notifications as read for current user (frontend compatibility)"""
+    # Verify authentication
+    require_admin_auth(authorization)
+    
+    # In a real implementation, you'd get the current user ID
+    current_user_id = "123e4567-e89b-12d3-a456-426614174000"  # Mock user ID
+    count = NotificationService.mark_all_as_read(db, current_user_id)
+    return {"notifications_marked_read": count}
+
+
+@router.get("/notifications/unread/count", tags=["notifications"])
+async def get_unread_notification_count_for_frontend(
+    db: Session = Depends(get_db_session),
+    authorization: Optional[str] = Header(None),
+):
+    """Get unread notification count for current user (frontend compatibility)"""
+    # Verify authentication
+    require_admin_auth(authorization)
+    
+    # In a real implementation, you'd get the current user ID
+    current_user_id = "123e4567-e89b-12d3-a456-426614174000"  # Mock user ID
+    count = NotificationService.get_unread_count(db, current_user_id)
+    return {"unread_count": count}
 

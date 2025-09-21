@@ -1,6 +1,6 @@
 import os
 
-from app.api.v1.endpoints import service_requests
+from app.api.v1.endpoints import service_requests, providers
 from app.core.config import settings
 from app.db.base import Base, engine
 from fastapi import FastAPI
@@ -17,6 +17,7 @@ app = FastAPI(
 
 # Include routers
 app.include_router(service_requests.router, prefix="/api/v1", tags=["service_requests"])
+app.include_router(providers.router, prefix="/api/v1/providers", tags=["providers"])
 
 
 @app.get("/")

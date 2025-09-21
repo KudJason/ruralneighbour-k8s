@@ -8,7 +8,7 @@ import httpx
 
 def get_db_session() -> Generator[Session, None, None]:
     """Dependency to get database session"""
-    return get_db()
+    yield from get_db()
 
 
 def verify_admin_token(token: str) -> bool:

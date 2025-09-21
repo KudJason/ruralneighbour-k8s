@@ -1,0 +1,34 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - _shared/ingress.yaml
+  - _shared/postgres-secrets.yaml
+  - _shared/redis-secrets.yaml
+  - auth-service/deployment.yaml
+  - auth-service/service.yaml
+  - auth-service/secrets.yaml
+  - user-service/deployment.yaml
+  - user-service/service.yaml
+  - request-service/deployment.yaml
+  - request-service/service.yaml
+  - payment-service/deployment.yaml
+  - payment-service/service.yaml
+  - notification-service/deployment.yaml
+  - notification-service/service.yaml
+  - content-service/deployment.yaml
+  - content-service/service.yaml
+  - location-service/deployment.yaml
+  - location-service/service.yaml
+  - safety-service/deployment.yaml
+  - safety-service/service.yaml
+  - investment-service/deployment.yaml
+  - investment-service/service.yaml
+  - rating-service/deployment.yaml
+  - rating-service/secret.yaml
+  - api-docs/deployment.yaml
+  - api-docs/service.yaml
+  - api-docs/swagger-ui-configmap.yaml
+
+
+

@@ -1,29 +1,40 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from typing import List
 import uuid
-from app.db.base import get_db
+from typing import List
+
 from app.api.deps import get_current_user_id
+from app.crud.crud_service_request import service_request_crud
+from app.db.base import get_db
 from app.schemas.service_request import (
     ServiceRequestCreate,
-    ServiceRequestUpdate,
     ServiceRequestResponse,
+    ServiceRequestUpdate,
 )
-from app.crud.crud_service_request import service_request_crud
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+# Manual mapping functions removed - now using Pydantic aliases directly
+
 
 router = APIRouter()
 
 
 @router.post("/requests", response_model=ServiceRequestResponse)
 def create_service_request(
-    request: ServiceRequestCreate,
+    request_data: ServiceRequestCreate,
     db: Session = Depends(get_db),
     current_user_id: uuid.UUID = Depends(get_current_user_id),
 ):
-    """Create a new service request"""
+    """Create a new service request with automatic field mapping.
+
+    Automatic field mapping via Pydantic aliases:
+    - serviceType -> service_type
+    - pickupLatitude -> pickup_latitude
+    - pickupLongitude -> pickup_longitude
+    - offeredAmount -> offered_amount
+    """
     try:
         return service_request_crud.create_service_request(
-            db=db, request_data=request.model_dump(), requester_id=str(current_user_id)
+            db=db, request_data=request_data, requester_id=str(current_user_id)
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -65,11 +76,15 @@ def get_service_request(
 @router.put("/requests/{request_id}", response_model=ServiceRequestResponse)
 def update_service_request(
     request_id: str,
-    request_update: ServiceRequestUpdate,
+    request_data: ServiceRequestUpdate,
     db: Session = Depends(get_db),
     current_user_id: uuid.UUID = Depends(get_current_user_id),
 ):
-    """Update a service request"""
+    """Update a service request (only pending) with automatic field mapping.
+
+    Automatic field mapping via Pydantic aliases:
+    - offeredAmount -> offered_amount
+    """
     request = service_request_crud.get(db=db, request_id=request_id)
     if not request:
         raise HTTPException(status_code=404, detail="Service request not found")
@@ -80,11 +95,18 @@ def update_service_request(
             status_code=403, detail="Not authorized to update this request"
         )
 
+    # Only allow update when pending
+    if (
+        getattr(request, "status", None)
+        and getattr(request.status, "value", str(request.status)) != "pending"
+    ):
+        raise HTTPException(status_code=400, detail="Cannot update non-pending request")
+
     try:
         return service_request_crud.update_service_request(
             db=db,
             request_id=request_id,
-            update_data=request_update.dict(exclude_unset=True),
+            update_data=request_data,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -109,3 +131,67 @@ def delete_service_request(
 
     service_request_crud.remove(db=db, request_id=request_id)
     return {"message": "Service request deleted successfully"}
+
+
+# ========== Frontend Compatibility Endpoints ==========
+
+
+@router.get("/requests/available", response_model=List[ServiceRequestResponse])
+def get_available_requests_for_frontend(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user_id: uuid.UUID = Depends(get_current_user_id),
+):
+    """Get available service requests for providers (frontend compatibility endpoint)"""
+    # This endpoint should redirect to the providers endpoint
+    # For now, we'll implement a basic version that gets all pending requests
+    return service_request_crud.get_available_requests(
+        db=db, provider_id=current_user_id, skip=skip, limit=limit
+    )
+
+
+@router.post("/requests/{request_id}/accept", response_model=dict)
+def accept_service_request_for_frontend(
+    request_id: str,
+    db: Session = Depends(get_db),
+    current_user_id: uuid.UUID = Depends(get_current_user_id),
+):
+    """Accept a service request (frontend compatibility endpoint)"""
+    # This should redirect to the providers endpoint
+    # For now, we'll implement a basic version
+    request = service_request_crud.get(db=db, request_id=request_id)
+    if not request:
+        raise HTTPException(status_code=404, detail="Service request not found")
+
+    # Check if request is available for acceptance
+    if (
+        getattr(request, "status", None)
+        and getattr(request.status, "value", str(request.status)) != "pending"
+    ):
+        raise HTTPException(
+            status_code=400, detail="Request is not available for acceptance"
+        )
+
+    # Update request status to accepted
+    update_data = ServiceRequestUpdate(status="accepted")
+    updated_request = service_request_crud.update_service_request(
+        db=db, request_id=request_id, update_data=update_data
+    )
+
+    return {
+        "message": "Service request accepted successfully",
+        "request": updated_request,
+    }
+
+
+@router.patch("/requests/{request_id}", response_model=ServiceRequestResponse)
+def patch_service_request(
+    request_id: str,
+    request_data: ServiceRequestUpdate,
+    db: Session = Depends(get_db),
+    current_user_id: uuid.UUID = Depends(get_current_user_id),
+):
+    """Patch a service request (frontend compatibility - same as PUT)"""
+    # Redirect to the existing PUT endpoint
+    return update_service_request(request_id, request_data, db, current_user_id)

@@ -33,6 +33,19 @@ class NewsArticleCRUD:
             .all()
         )
 
+    def get_active_articles_with_filter(
+        self,
+        db: Session,
+        skip: int = 0,
+        limit: int = 100,
+        is_featured: Optional[bool] = None,
+    ) -> List[NewsArticle]:
+        """Get active news articles with optional is_featured filter"""
+        query = db.query(NewsArticle).filter(NewsArticle.is_active == True)
+        if is_featured is not None:
+            query = query.filter(NewsArticle.is_featured == is_featured)
+        return query.offset(skip).limit(limit).all()
+
     def get_featured_articles(
         self, db: Session, skip: int = 0, limit: int = 10
     ) -> List[NewsArticle]:

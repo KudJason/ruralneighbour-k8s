@@ -28,10 +28,15 @@ async def create_news_article(
 
 @router.get("/news/articles", response_model=List[NewsArticleResponse], tags=["public"])
 async def get_news_articles(
-    skip: int = 0, limit: int = 100, db: Session = Depends(get_db_session)
+    skip: int = 0,
+    limit: int = 100,
+    is_featured: Optional[bool] = None,
+    db: Session = Depends(get_db_session),
 ):
-    """Get all active news articles (Public endpoint)"""
-    articles = ContentService.get_active_news_articles(db, skip, limit)
+    """Get active news articles with optional is_featured filter (Public endpoint)"""
+    articles = ContentService.get_active_news_articles_with_filter(
+        db, skip, limit, is_featured
+    )
     return articles
 
 
@@ -72,6 +77,25 @@ async def update_news_article(
     # Verify admin authentication
     require_admin_auth(authorization)
 
+    article = ContentService.update_news_article(db, article_id, article_data)
+    if not article:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="News article not found"
+        )
+    return article
+
+
+@router.patch(
+    "/news/articles/{article_id}", response_model=NewsArticleResponse, tags=["admin"]
+)
+async def patch_news_article(
+    article_id: str,
+    article_data: NewsArticleUpdate,
+    db: Session = Depends(get_db_session),
+    authorization: Optional[str] = Header(None),
+):
+    """Partially update a news article (Admin only)"""
+    require_admin_auth(authorization)
     article = ContentService.update_news_article(db, article_id, article_data)
     if not article:
         raise HTTPException(

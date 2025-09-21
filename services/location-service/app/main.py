@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from app.api.v1.endpoints import addresses, locations
+from app.models import saved_location  # ensure model is imported for table creation
 from app.core.config import settings
 from app.db.base import engine, Base
 

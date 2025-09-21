@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-docs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-docs
+  template:
+    metadata:
+      labels:
+        app: api-docs
+    spec:
+      containers:
+        - name: swagger-ui
+          image: swaggerapi/swagger-ui:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SWAGGER_JSON_URL
+              value: /config/swagger-config.json
+          volumeMounts:
+            - name: config
+              mountPath: /usr/share/nginx/html/config
+      volumes:
+        - name: config
+          configMap:
+            name: api-docs-config
+            items:
+              - key: swagger-config.json
+                path: swagger-config.json

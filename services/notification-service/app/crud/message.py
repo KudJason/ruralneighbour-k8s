@@ -127,6 +127,31 @@ class MessageCRUD:
         db.commit()
         return result
 
+    def update(self, db: Session, message_id: str, obj_in: MessageUpdate) -> Optional[Message]:
+        """Update a message"""
+        db_obj = self.get(db, message_id)
+        if not db_obj:
+            return None
+
+        # Update only provided fields
+        update_data = obj_in.model_dump(exclude_unset=True)
+        
+        # Handle is_read status update
+        if "is_read" in update_data:
+            db_obj.is_read = update_data["is_read"]
+            if update_data["is_read"]:
+                db_obj.read_at = datetime.utcnow()
+            else:
+                db_obj.read_at = None
+        
+        # Update content if provided
+        if "content" in update_data:
+            db_obj.content = update_data["content"]
+
+        db.commit()
+        db.refresh(db_obj)
+        return db_obj
+
     def delete(self, db: Session, message_id: str) -> bool:
         """Delete a message"""
         db_obj = self.get(db, message_id)

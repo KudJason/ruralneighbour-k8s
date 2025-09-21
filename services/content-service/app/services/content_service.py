@@ -44,6 +44,16 @@ class ContentService:
         return [NewsArticleResponse.model_validate(article) for article in articles]
 
     @staticmethod
+    def get_active_news_articles_with_filter(
+        db: Session, skip: int = 0, limit: int = 100, is_featured: Optional[bool] = None
+    ) -> List[NewsArticleResponse]:
+        """Get active news articles with optional is_featured filter"""
+        articles = news_article_crud.get_active_articles_with_filter(
+            db, skip, limit, is_featured
+        )
+        return [NewsArticleResponse.model_validate(article) for article in articles]
+
+    @staticmethod
     def get_featured_news_articles(
         db: Session, skip: int = 0, limit: int = 10
     ) -> List[NewsArticleResponse]:

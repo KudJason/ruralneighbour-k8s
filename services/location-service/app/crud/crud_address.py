@@ -4,6 +4,7 @@ from sqlalchemy import func
 import uuid
 
 from ..models.address import UserAddress
+from ..models.address import POSTGIS_AVAILABLE
 from ..services.location_service import LocationService
 from ..schemas.address import AddressCreate
 
@@ -20,10 +21,8 @@ class AddressCRUD:
         else:
             data = obj_in
 
-        # Create PostGIS point from coordinates
-        point = LocationService.create_address_point(
-            data["latitude"], data["longitude"]
-        )
+        # Create location geometry or string depending on environment
+        point_wkt = f"POINT({data['longitude']} {data['latitude']})"
 
         # Validate location
         validation_result = LocationService.validate_location(
@@ -38,8 +37,8 @@ class AddressCRUD:
             state=data["state"],
             postal_code=data["postal_code"],
             country=data.get("country", "USA"),
-            location=func.ST_GeomFromText(
-                f"POINT({data['longitude']} {data['latitude']})", 4326
+            location=(
+                func.ST_GeomFromText(point_wkt, 4326) if POSTGIS_AVAILABLE else point_wkt
             ),
             is_within_service_area=validation_result["is_valid"],
             is_primary=data.get("is_primary", False),
@@ -97,11 +96,9 @@ class AddressCRUD:
 
         # Handle location update if coordinates are provided
         if "latitude" in update_data and "longitude" in update_data:
-            point = LocationService.create_address_point(
-                update_data["latitude"], update_data["longitude"]
-            )
-            update_data["location"] = func.ST_GeomFromText(
-                f"POINT({update_data['longitude']} {update_data['latitude']})", 4326
+            point_wkt = f"POINT({update_data['longitude']} {update_data['latitude']})"
+            update_data["location"] = (
+                func.ST_GeomFromText(point_wkt, 4326) if POSTGIS_AVAILABLE else point_wkt
             )
 
             # Revalidate location

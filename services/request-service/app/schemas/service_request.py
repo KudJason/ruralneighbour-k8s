@@ -1,45 +1,54 @@
 # --- Basic Pydantic schemas for request-service ---
-import uuid
-from typing import Optional, List
 from datetime import datetime
-from pydantic import BaseModel, Field, field_validator
+from typing import List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ServiceRequestCreate(BaseModel):
     title: str
-    description: Optional[str]
-    service_type: str
-    pickup_latitude: float
-    pickup_longitude: float
-    destination_latitude: Optional[float]
-    destination_longitude: Optional[float]
-    offered_amount: Optional[float]
+    description: Optional[str] = None
+    service_type: str = Field(alias="serviceType")
+    pickup_latitude: float = Field(alias="pickupLatitude")
+    pickup_longitude: float = Field(alias="pickupLongitude")
+    destination_latitude: Optional[float] = Field(
+        alias="destinationLatitude", default=None
+    )
+    destination_longitude: Optional[float] = Field(
+        alias="destinationLongitude", default=None
+    )
+    offered_amount: Optional[float] = Field(alias="offeredAmount", default=None)
+
+    model_config = ConfigDict(populate_by_name=True, from_attributes=True)
 
 
 class ServiceRequestUpdate(BaseModel):
-    title: Optional[str]
-    description: Optional[str]
-    offered_amount: Optional[float]
+    title: Optional[str] = None
+    description: Optional[str] = None
+    offered_amount: Optional[float] = Field(alias="offeredAmount", default=None)
+    status: Optional[str] = None
+
+    model_config = ConfigDict(populate_by_name=True, from_attributes=True)
 
 
 class ServiceRequestResponse(BaseModel):
     id: int
-    request_id: str
-    requester_id: str
+    request_id: str = Field(alias="requestId")
+    requester_id: str = Field(alias="requesterId")
     title: str
     description: Optional[str]
-    service_type: str
-    pickup_latitude: float
-    pickup_longitude: float
-    destination_latitude: Optional[float]
-    destination_longitude: Optional[float]
-    offered_amount: Optional[float]
+    service_type: str = Field(alias="serviceType")
+    pickup_latitude: float = Field(alias="pickupLatitude")
+    pickup_longitude: float = Field(alias="pickupLongitude")
+    destination_latitude: Optional[float] = Field(alias="destinationLatitude")
+    destination_longitude: Optional[float] = Field(alias="destinationLongitude")
+    offered_amount: Optional[float] = Field(alias="offeredAmount")
     status: str
-    payment_status: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
-    
-    model_config = {"from_attributes": True}
+    payment_status: Optional[str] = Field(alias="paymentStatus", default=None)
+    created_at: datetime = Field(alias="createdAt")
+    updated_at: datetime = Field(alias="updatedAt")
+
+    model_config = ConfigDict(populate_by_name=True, from_attributes=True)
 
 
 # New output schemas referenced in routers
@@ -59,9 +68,11 @@ class MessageResponse(BaseModel):
 
 
 class ServiceAssignmentCreate(BaseModel):
-    request_id: str
-    estimated_completion_time: Optional[datetime | str]
-    provider_notes: Optional[str]
+    request_id: str = Field(alias="requestId")
+    estimated_completion_time: Optional[datetime | str] = Field(
+        alias="estimatedCompletionTime"
+    )
+    provider_notes: Optional[str] = Field(alias="providerNotes")
 
     @field_validator("estimated_completion_time", mode="before")
     def parse_datetime(cls, v):
@@ -72,12 +83,16 @@ class ServiceAssignmentCreate(BaseModel):
                 return v  # let downstream handle invalid format
         return v
 
+    model_config = ConfigDict(populate_by_name=True, from_attributes=True)
+
 
 class ServiceAssignmentUpdate(BaseModel):
     status: str
-    provider_notes: Optional[str]
-    estimated_completion_time: Optional[datetime | str]
-    completion_notes: Optional[str]
+    provider_notes: Optional[str] = Field(alias="providerNotes")
+    estimated_completion_time: Optional[datetime | str] = Field(
+        alias="estimatedCompletionTime"
+    )
+    completion_notes: Optional[str] = Field(alias="completionNotes")
 
     @field_validator("estimated_completion_time", mode="before")
     def parse_datetime(cls, v):
@@ -88,19 +103,24 @@ class ServiceAssignmentUpdate(BaseModel):
                 return v
         return v
 
+    model_config = ConfigDict(populate_by_name=True, from_attributes=True)
+
 
 class ServiceAssignmentResponse(BaseModel):
-    assignment_id: str
-    request_id: str
-    provider_id: str
+    assignment_id: str = Field(alias="assignmentId")
+    request_id: str = Field(alias="requestId")
+    provider_id: str = Field(alias="providerId")
     status: str
-    provider_notes: Optional[str]
-    completion_notes: Optional[str]
-    estimated_completion_time: Optional[datetime]
-    completed_at: Optional[datetime]
-    created_at: datetime
-    updated_at: datetime
-    model_config = {"from_attributes": True}
+    provider_notes: Optional[str] = Field(alias="providerNotes")
+    completion_notes: Optional[str] = Field(alias="completionNotes")
+    estimated_completion_time: Optional[datetime] = Field(
+        alias="estimatedCompletionTime"
+    )
+    completed_at: Optional[datetime] = Field(alias="completedAt")
+    created_at: datetime = Field(alias="createdAt")
+    updated_at: datetime = Field(alias="updatedAt")
+
+    model_config = ConfigDict(populate_by_name=True, from_attributes=True)
 
 
 class ServiceAssignmentOut(ServiceAssignmentResponse):
@@ -108,23 +128,26 @@ class ServiceAssignmentOut(ServiceAssignmentResponse):
 
 
 class RatingCreate(BaseModel):
-    assignment_id: str
-    ratee_id: str
-    rating_score: int
-    review_text: Optional[str]
-    is_provider_rating: bool
+    assignment_id: str = Field(alias="assignmentId")
+    ratee_id: str = Field(alias="rateeId")
+    rating_score: int = Field(alias="ratingScore")
+    review_text: Optional[str] = Field(alias="reviewText")
+    is_provider_rating: bool = Field(alias="isProviderRating")
+
+    model_config = ConfigDict(populate_by_name=True, from_attributes=True)
 
 
 class RatingResponse(BaseModel):
-    rating_id: str
-    assignment_id: str
-    rater_id: str
-    ratee_id: str
-    rating_score: int
-    review_text: Optional[str]
-    is_provider_rating: bool
-    created_at: datetime
-    model_config = {"from_attributes": True}
+    rating_id: str = Field(alias="ratingId")
+    assignment_id: str = Field(alias="assignmentId")
+    rater_id: str = Field(alias="raterId")
+    ratee_id: str = Field(alias="rateeId")
+    rating_score: int = Field(alias="ratingScore")
+    review_text: Optional[str] = Field(alias="reviewText")
+    is_provider_rating: bool = Field(alias="isProviderRating")
+    created_at: datetime = Field(alias="createdAt")
+
+    model_config = ConfigDict(populate_by_name=True, from_attributes=True)
 
 
 class RatingOut(RatingResponse):
@@ -138,18 +161,19 @@ class StatusUpdateRequest(BaseModel):
 
 # Additional provider view schemas
 class AvailableRequest(BaseModel):
-    request_id: str
+    request_id: str = Field(alias="requestId")
     title: str
     description: Optional[str]
-    service_type: str
-    pickup_latitude: float
-    pickup_longitude: float
-    offered_amount: Optional[float]
+    service_type: str = Field(alias="serviceType")
+    pickup_latitude: float = Field(alias="pickupLatitude")
+    pickup_longitude: float = Field(alias="pickupLongitude")
+    offered_amount: Optional[float] = Field(alias="offeredAmount")
     status: str
-    requester_id: str
-    created_at: datetime
-    updated_at: datetime
-    model_config = {"from_attributes": True}
+    requester_id: str = Field(alias="requesterId")
+    created_at: datetime = Field(alias="createdAt")
+    updated_at: datetime = Field(alias="updatedAt")
+
+    model_config = ConfigDict(populate_by_name=True, from_attributes=True)
 
 
 class AvailableRequestsList(BaseModel):

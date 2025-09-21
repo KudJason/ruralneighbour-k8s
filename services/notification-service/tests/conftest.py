@@ -1,11 +1,12 @@
 import pytest
 import os
+
+# Set testing environment EARLY before importing app modules
+os.environ["TESTING"] = "true"
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.db.base import Base
-
-# Set testing environment
-os.environ["TESTING"] = "true"
 
 # Use SQLite for testing
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test_notification.db"

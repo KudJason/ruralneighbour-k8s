@@ -63,6 +63,12 @@ class MessageService:
         return message_crud.mark_conversation_as_read(db, user_id, other_user_id)
 
     @staticmethod
+    def update_message(db: Session, message_id: str, message_data: MessageUpdate) -> Optional[MessageResponse]:
+        """Update a message"""
+        message = message_crud.update(db, message_id, message_data)
+        return MessageResponse.model_validate(message) if message else None
+
+    @staticmethod
     def delete_message(db: Session, message_id: str) -> bool:
         """Delete a message"""
         return message_crud.delete(db, message_id)

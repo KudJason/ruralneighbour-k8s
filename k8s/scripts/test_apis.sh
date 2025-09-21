@@ -31,8 +31,8 @@ test_service() {
         return 1
     fi
     
-    # Port forward (map local $port to container 8000)
-    kubectl port-forward pod/$pod_name $port:8000 > /dev/null 2>&1 &
+    # Port forward
+    kubectl port-forward pod/$pod_name $port:$port > /dev/null 2>&1 &
     local pf_pid=$!
     sleep 3
     
@@ -86,22 +86,9 @@ show_docs() {
         echo "  - OpenAPI JSON: http://localhost:$port/openapi.json (via port-forward)"
     fi
     
-    # Map service to ingress path prefix
-    local path_prefix=""
-    case "$service_name" in
-        auth-service) path_prefix="auth" ;;
-        user-service) path_prefix="users" ;;
-        location-service) path_prefix="locations" ;;
-        payment-service) path_prefix="payments" ;;
-        request-service) path_prefix="requests" ;;
-        notification-service) path_prefix="notifications" ;;
-        content-service) path_prefix="content" ;;
-        safety-service) path_prefix="safety" ;;
-    esac
-    
-    echo "  - Ingress Swagger UI: $API_BASE/$path_prefix/docs"
-    echo "  - Ingress ReDoc: $API_BASE/$path_prefix/redoc"
-    echo "  - Ingress OpenAPI: $API_BASE/$path_prefix/openapi.json"
+    echo "  - Ingress Swagger UI: $API_BASE/$service_name/docs"
+    echo "  - Ingress ReDoc: $API_BASE/$service_name/redoc"
+    echo "  - Ingress OpenAPI: $API_BASE/$service_name/openapi.json"
     echo ""
 }
 
@@ -120,25 +107,12 @@ echo ""
 echo -e "${YELLOW}🌐 Testing Services via Ingress...${NC}"
 echo "====================================="
 
-# Ensure ingress reachability: if direct $API_BASE is not reachable, port-forward ingress controller to localhost:8081
-if ! curl -s -o /dev/null -w "%{http_code}" "$API_BASE/auth/health" 2>/dev/null | grep -q "^200$"; then
-    echo -e "${YELLOW}⚠️  Ingress via $API_BASE not reachable. Port-forwarding ingress controller to localhost:8081...${NC}"
-    kubectl -n ingress-nginx port-forward svc/ingress-nginx-controller 8081:80 > /dev/null 2>&1 &
-    pf_ingress_pid=$!
-    trap 'kill ${pf_ingress_pid} 2>/dev/null || true' EXIT
-    sleep 3
-    API_BASE="http://localhost:8081/api/v1"
-fi
-
-# Test via ingress (paths aligned with ingress.yaml)
-test_api_ingress "auth" "/health"
-test_api_ingress "users" "/health"
-test_api_ingress "requests" "/health"
-test_api_ingress "content" "/health"
-test_api_ingress "notifications" "/health"
-test_api_ingress "locations" "/health"
-test_api_ingress "payments" "/health"
-test_api_ingress "safety" "/health"
+# Test via ingress
+test_api_ingress "auth-service" "/health"
+test_api_ingress "user-service" "/health"
+test_api_ingress "request-service" "/health"
+test_api_ingress "content-service" "/health"
+test_api_ingress "notification-service" "/health"
 
 echo ""
 echo -e "${YELLOW}📊 Service Status${NC}"

@@ -5,6 +5,7 @@ from app.api.deps import get_db_session, require_admin_auth
 from app.services.message_service import MessageService
 from app.schemas.message import (
     MessageCreate,
+    MessageUpdate,
     MessageResponse,
     ConversationResponse,
 )
@@ -137,6 +138,25 @@ async def mark_conversation_as_read(
     return {"messages_marked_read": count}
 
 
+@router.patch("/messages/{message_id}", response_model=MessageResponse, tags=["messages"])
+async def update_message(
+    message_id: str,
+    message_data: MessageUpdate,
+    db: Session = Depends(get_db_session),
+    authorization: Optional[str] = Header(None),
+):
+    """Update a message"""
+    # Verify authentication
+    require_admin_auth(authorization)
+
+    message = MessageService.update_message(db, message_id, message_data)
+    if not message:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Message not found"
+        )
+    return message
+
+
 @router.delete("/messages/{message_id}", tags=["messages"])
 async def delete_message(
     message_id: str,
@@ -153,4 +173,53 @@ async def delete_message(
             status_code=status.HTTP_404_NOT_FOUND, detail="Message not found"
         )
     return {"message": "Message deleted successfully"}
+
+
+# ========== Frontend Compatibility Endpoints ==========
+
+@router.get("/messages/conversations/", response_model=List[dict], tags=["messages"])
+async def get_conversations_list(
+    db: Session = Depends(get_db_session),
+    authorization: Optional[str] = Header(None),
+):
+    """Get list of conversations for the current user (frontend compatibility)"""
+    # Verify authentication
+    require_admin_auth(authorization)
+    
+    # This is a simplified version - in a real implementation, you'd get the current user ID
+    # and return their conversation list
+    conversations = MessageService.get_conversations_list(db)
+    return conversations
+
+
+@router.post("/messages/conversations/{user_id}/mark_read", tags=["messages"])
+async def mark_conversation_read_for_frontend(
+    user_id: str,
+    db: Session = Depends(get_db_session),
+    authorization: Optional[str] = Header(None),
+):
+    """Mark conversation as read (frontend compatibility endpoint)"""
+    # Verify authentication
+    require_admin_auth(authorization)
+    
+    # Redirect to the existing endpoint
+    # In a real implementation, you'd get the current user ID
+    current_user_id = "123e4567-e89b-12d3-a456-426614174000"  # Mock user ID
+    count = MessageService.mark_conversation_as_read(db, current_user_id, user_id)
+    return {"messages_marked_read": count}
+
+
+@router.get("/messages/unread/count", tags=["messages"])
+async def get_unread_count_for_frontend(
+    db: Session = Depends(get_db_session),
+    authorization: Optional[str] = Header(None),
+):
+    """Get unread message count for current user (frontend compatibility)"""
+    # Verify authentication
+    require_admin_auth(authorization)
+    
+    # In a real implementation, you'd get the current user ID
+    current_user_id = "123e4567-e89b-12d3-a456-426614174000"  # Mock user ID
+    count = MessageService.get_unread_count(db, current_user_id)
+    return {"unread_count": count}
 

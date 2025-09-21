@@ -75,6 +75,15 @@ spec:
                 port:
                   number: 80
 
+          # Investment Service
+          - path: /api/v1/investments
+            pathType: Prefix
+            backend:
+              service:
+                name: investment-service
+                port:
+                  number: 80
+
           # Safety Service
           - path: /api/v1/safety
             pathType: Prefix
@@ -84,11 +93,22 @@ spec:
                 port:
                   number: 80
 
+          # API Docs (swagger-ui) - added separately under /api-docs
+
           # Health check endpoints
           - path: /health
             pathType: Prefix
             backend:
               service:
                 name: auth-service
+                port:
+                  number: 80
+
+          # API Docs Portal (Swagger UI aggregator)
+          - path: /api-docs
+            pathType: Prefix
+            backend:
+              service:
+                name: api-docs
                 port:
                   number: 80

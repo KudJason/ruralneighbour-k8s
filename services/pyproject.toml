@@ -64,7 +64,8 @@ testpaths = [
     "notification-service/tests",
     "payment-service/tests",
     "request-service/tests",
-    "safety-service/tests"
+    "safety-service/tests",
+    "investment-service/tests"
 ]
 
 [tool.poe.tasks]
@@ -79,4 +80,9 @@ test-payment = { shell = "cd payment-service && PYTHONPATH=. pytest" }
 test-request = { shell = "cd request-service && PYTHONPATH=. pytest" }
 test-safety = { shell = "cd safety-service && PYTHONPATH=. pytest" }
 test-all = ["test-auth", "test-user", "test-content", "test-location", "test-notification", "test-payment", "test-request", "test-safety"]
+test-investment = { shell = "cd investment-service && PYTHONPATH=. pytest" }
 export-requirement = "./export_requirements.bash"
+
+# Narrow mapping-only unit tests (no DB required)
+test-request-mapping = { shell = "cd request-service && PYTHONPATH=. pytest tests/test_mapping_unit.py" }
+test-user-mapping = { shell = "cd user-service && PYTHONPATH=. pytest tests/test_mapping_unit.py" }

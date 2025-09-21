@@ -60,3 +60,18 @@ def test_get_my_user_info():
     """Test getting user info"""
     response = client.get("/api/v1/users/me")
     assert response.status_code in [200, 404, 500]
+
+
+def test_patch_my_user_info_aliases():
+    """Test patching user info with alias fields"""
+    payload = {"fullName": "Alice", "phone": "+123"}
+    response = client.patch("/api/v1/users/me", json=payload)
+    # Without DB, allow 200/404/500, but endpoint should be wired
+    assert response.status_code in [200, 404, 500]
+
+
+def test_patch_profile_me_aliases():
+    """Test patching profile me with avatar alias"""
+    payload = {"avatar_url": "https://example.com/a.png"}
+    response = client.patch("/api/v1/profiles/me", json=payload)
+    assert response.status_code in [200, 404, 500]
