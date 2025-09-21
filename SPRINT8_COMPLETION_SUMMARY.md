@@ -129,6 +129,7 @@ k8s/
 ### 📋 API 兼容性改进（变更请求 CRs）
 
 #### 1. ✅ investments-api-change-request
+
 - **服务**: investment-service
 - **功能**: 投资机会 API 实现
 - **端点**: GET/POST/PATCH/DELETE `/api/v1/investments/`
@@ -136,47 +137,55 @@ k8s/
 - **测试状态**: 3/3 通过
 
 #### 2. ✅ locations-addresses-api-change-request
+
 - **服务**: location-service
 - **功能**: 地址和位置 API 兼容性
 - **改进**: 支持 `is_default`/`is_primary` 别名，距离计算双参数支持
 - **测试状态**: 11/11 通过
 
 #### 3. ✅ messages-notifications-api-change-request
+
 - **服务**: notification-service
 - **功能**: 消息和通知 API 改进
 - **改进**: PATCH 端点支持，字段映射兼容
 - **测试状态**: 43/43 通过
 
 #### 4. ✅ news-api-change-request
+
 - **服务**: content-service
 - **功能**: 新闻 API 完整 CRUD
 - **端点**: 公共读取 + 管理端操作
 - **测试状态**: 所有功能通过
 
 #### 5. ✅ nin-lah-api-change-request
+
 - **服务**: request-service, user-service
 - **功能**: NIN/LAH 接口字段映射
 - **改进**: 前端字段到后端字段的映射
 - **测试状态**: 2/2 通过
 
 #### 6. ✅ openapi-swagger-aggregator-cr
+
 - **功能**: Swagger UI 文档聚合
 - **配置**: 8 个微服务的 OpenAPI 文档聚合
 - **访问**: `/api-docs` 统一入口
 
 #### 7. ✅ payments-api-change-request
+
 - **服务**: payment-service
 - **功能**: 支付网关 API 兼容性
 - **网关**: Stripe 和 PayPal 集成
 - **测试状态**: 8/8 通过
 
 #### 8. ✅ ratings-api-change-request
+
 - **服务**: rating-service
 - **功能**: 评分服务 API 实现
 - **字段映射**: `rating` → `rating_score`, `category` → `data.category`
 - **测试状态**: 完整功能实现
 
 #### 9. ✅ users-profiles-api-change-request
+
 - **服务**: user-service
 - **功能**: 用户和资料 API 字段映射
 - **改进**: 支持前端字段别名映射
