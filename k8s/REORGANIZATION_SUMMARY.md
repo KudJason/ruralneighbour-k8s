@@ -171,3 +171,8 @@ microk8s kubectl apply -k overlays/development
 4. **安全加固**：增强安全配置
 5. **性能优化**：优化资源配置和部署策略
 
+
+
+
+
+

@@ -17,16 +17,23 @@ spec:
           image: swaggerapi/swagger-ui:latest
           ports:
             - containerPort: 8080
-          env:
-            - name: SWAGGER_JSON_URL
-              value: /config/swagger-config.json
           volumeMounts:
-            - name: config
-              mountPath: /usr/share/nginx/html/config
+            - name: swagger-index
+              mountPath: /usr/share/nginx/html/index.html
+              subPath: index.html
+            - name: swagger-config
+              mountPath: /usr/share/nginx/html/swagger-initializer.js
+              subPath: swagger-initializer.js
       volumes:
-        - name: config
+        - name: swagger-index
           configMap:
-            name: api-docs-config
+            name: swagger-ui-config
             items:
-              - key: swagger-config.json
-                path: swagger-config.json
+              - key: index.html
+                path: index.html
+        - name: swagger-config
+          configMap:
+            name: swagger-ui-config
+            items:
+              - key: swagger-initializer.js
+                path: swagger-initializer.js

@@ -18,8 +18,14 @@ RUN apt-get update \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY . .
+# Copy application code and Alembic configuration
+COPY app/ ./app/
+COPY tests/ ./tests/
+COPY alembic/ ./alembic/
+COPY alembic.ini ./
+COPY __init__.py ./
+COPY README.md ./ 
+COPY Dockerfile ./
 
 # Create non-root user
 RUN adduser --disabled-password --gecos '' appuser

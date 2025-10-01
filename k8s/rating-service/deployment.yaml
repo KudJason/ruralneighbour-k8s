@@ -2,12 +2,12 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: rating-service
-  namespace: rural-neighbour
+  namespace: ruralneighbour-dev
   labels:
     app: rating-service
     version: v1
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: rating-service
@@ -19,15 +19,13 @@ spec:
     spec:
       containers:
         - name: rating-service
-          image: rating-service:latest
+          image: 127.0.0.1:32000/ruralneighbour/rating-service:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000
           env:
             - name: DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: rating-service-secrets
-                  key: database-url
+              value: "postgresql://neighbor:password@rn-pg-rw:5432/rating_service"
             - name: REDIS_URL
               valueFrom:
                 secretKeyRef:
@@ -61,9 +59,3 @@ spec:
               port: 8000
             initialDelaySeconds: 5
             periodSeconds: 5
-
-
-
-
-
-

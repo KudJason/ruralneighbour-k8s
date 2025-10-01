@@ -216,3 +216,8 @@ microk8s kubectl describe pod <pod-name> -n default
 3. 添加环境特定的补丁文件
 4. 更新部署脚本以支持新环境
 
+
+
+
+
+

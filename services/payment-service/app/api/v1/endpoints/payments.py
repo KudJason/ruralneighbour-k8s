@@ -14,6 +14,7 @@ from app.schemas.payment_method import (
     PaymentMethodCreate,
     PaymentMethodOut,
     PaymentMethodUpdate,
+    PaymentMethodListResponse,
 )
 from app.services.payment_method_service import PaymentMethodService
 from app.services.payment_service import PaymentService

@@ -122,3 +122,8 @@ $KUBECTL_CMD wait --for=delete namespace/$NAMESPACE --timeout=60s || true
 
 echo -e "${GREEN}✅ 清理完成！${NC}"
 
+
+
+
+
+

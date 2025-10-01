@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-init-job
+  namespace: ruralneighbour-dev
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: db-init
+          image: postgres:16
+          env:
+            - name: PGPASSWORD
+              value: "password"
+          command:
+            - /bin/bash
+            - -c
+            - |
+              echo "等待 PostGIS 數據庫啟動..."
+              until pg_isready -h postgis-pg-0 -p 5432 -U neighbor; do
+                echo "等待數據庫連接..."
+                sleep 2
+              done
+
+              echo "創建數據庫(幂等)..."
+              DBS=(auth_db user_db content_db request_db location_db notification_db payment_db rating_db safety_db investment_db)
+              for DB in "${DBS[@]}"; do
+                echo "確保存在數據庫: $DB"
+                psql -h postgis-pg-0 -U neighbor -d postgres -tc "SELECT 1 FROM pg_database WHERE datname='${DB}'" | grep -q 1 || \
+                  psql -h postgis-pg-0 -U neighbor -d postgres -c "CREATE DATABASE ${DB};"
+              done
+
+              echo "為 location_db 安裝 PostGIS 擴展..."
+              psql -h postgis-pg-0 -U neighbor -d location_db -c "
+              CREATE EXTENSION IF NOT EXISTS postgis;
+              "
+
+              echo "數據庫初始化完成！"

@@ -1,12 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
-from sqlalchemy.orm import Session
-from jose import JWTError, jwt
-from app.schemas.user import UserCreate, UserLogin, UserOut
-from app.schemas.token import Token, TokenPayload
-from app.services.auth_service import AuthService
-from app.core.security import create_access_token, SECRET_KEY, ALGORITHM
+from app.core.security import ALGORITHM, SECRET_KEY, create_access_token
 from app.db.session import get_db
 from app.models.user import User
+from app.schemas.token import Token, TokenPayload
+from app.schemas.user import (
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
+    UserCreate,
+    UserLogin,
+    UserOut,
+)
+from app.services.auth_service import AuthService
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from jose import JWTError, jwt
+from sqlalchemy.orm import Session
 
 router = APIRouter()
 
@@ -50,3 +56,17 @@ def get_me(request: Request, db: Session = Depends(get_db)):
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
         )
     return TokenPayload(sub=user_id, exp=int(exp), role=role)
+
+
+@router.post("/forgot-password")
+def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    """Send password reset email"""
+    result = AuthService.forgot_password(db, request.email)
+    return result
+
+
+@router.post("/reset-password")
+def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
+    """Reset password using token"""
+    result = AuthService.reset_password(db, request.token, request.new_password)
+    return result

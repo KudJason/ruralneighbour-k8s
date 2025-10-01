@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: debug-config
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>API Docs Debug</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .test { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+            .success { background-color: #d4edda; }
+            .error { background-color: #f8d7da; }
+        </style>
+    </head>
+    <body>
+        <h1>API Documentation Debug</h1>
+        
+        <div class="test" id="openapi-test">
+            <h3>OpenAPI Endpoint Test</h3>
+            <div id="openapi-result">Testing...</div>
+        </div>
+        
+        <div class="test" id="scalar-test">
+            <h3>Scalar CDN Test</h3>
+            <div id="scalar-result">Testing...</div>
+        </div>
+        
+        <div class="test" id="swagger-test">
+            <h3>Swagger UI Test</h3>
+            <div id="swagger-result">Testing...</div>
+        </div>
+        
+        <script>
+            // Test OpenAPI endpoint
+            fetch('/openapi/auth.json')
+                .then(response => {
+                    document.getElementById('openapi-result').innerHTML = 
+                        response.ok ? '<span class="success">✅ OpenAPI endpoint accessible</span>' : 
+                        '<span class="error">❌ OpenAPI endpoint failed: ' + response.status + '</span>';
+                })
+                .catch(error => {
+                    document.getElementById('openapi-result').innerHTML = 
+                        '<span class="error">❌ OpenAPI endpoint error: ' + error.message + '</span>';
+                });
+            
+            // Test Scalar CDN
+            const scalarScript = document.createElement('script');
+            scalarScript.src = 'https://cdn.jsdelivr.net/npm/@scalar/api-reference@latest';
+            scalarScript.onload = () => {
+                document.getElementById('scalar-result').innerHTML = 
+                    '<span class="success">✅ Scalar CDN loaded successfully</span>';
+            };
+            scalarScript.onerror = () => {
+                document.getElementById('scalar-result').innerHTML = 
+                    '<span class="error">❌ Scalar CDN failed to load</span>';
+            };
+            document.head.appendChild(scalarScript);
+            
+            // Test Swagger UI CDN
+            const swaggerScript = document.createElement('script');
+            swaggerScript.src = 'https://unpkg.com/swagger-ui-dist@latest/swagger-ui-bundle.js';
+            swaggerScript.onload = () => {
+                document.getElementById('swagger-result').innerHTML = 
+                    '<span class="success">✅ Swagger UI CDN loaded successfully</span>';
+            };
+            swaggerScript.onerror = () => {
+                document.getElementById('swagger-result').innerHTML = 
+                    '<span class="error">❌ Swagger UI CDN failed to load</span>';
+            };
+            document.head.appendChild(swaggerScript);
+        </script>
+    </body>
+    </html>

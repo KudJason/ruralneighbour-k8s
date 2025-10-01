@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgis-pg
+  namespace: ruralneighbour-dev
+  labels:
+    app: postgis-pg
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - port: 5432
+    name: postgres
+  selector:
+    app: postgis-pg
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgis-pg-read
+  namespace: ruralneighbour-dev
+  labels:
+    app: postgis-pg
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5432
+    name: postgres
+  selector:
+    app: postgis-pg
+
+
+
+
+
+

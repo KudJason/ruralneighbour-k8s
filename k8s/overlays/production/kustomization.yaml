@@ -1,95 +1,20 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: ruralneighbour
+namespace: ruralneighbour-prod
 
 resources:
-  - ../../
-
-secretGenerator:
-  - name: app-secrets
-    envs:
-      - .env
-    options:
-      disableNameSuffixHash: true
-
-patches:
-  # 生产环境资源限制
-  - patch: |-
-      - op: replace
-        path: /spec/template/spec/containers/0/resources
-        value:
-          requests:
-            memory: "256Mi"
-            cpu: "200m"
-          limits:
-            memory: "1Gi"
-            cpu: "1000m"
-    target:
-      kind: Deployment
-      name: auth-service
-
-  - patch: |-
-      - op: replace
-        path: /spec/template/spec/containers/0/resources
-        value:
-          requests:
-            memory: "256Mi"
-            cpu: "200m"
-          limits:
-            memory: "1Gi"
-            cpu: "1000m"
-    target:
-      kind: Deployment
-      name: user-service
-
-  - patch: |-
-      - op: replace
-        path: /spec/template/spec/containers/0/resources
-        value:
-          requests:
-            memory: "512Mi"
-            cpu: "500m"
-          limits:
-            memory: "2Gi"
-            cpu: "2000m"
-    target:
-      kind: Deployment
-      name: request-service
-
-  # 生产环境副本数
-  - patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 3
-    target:
-      kind: Deployment
-      name: auth-service
-
-  - patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 3
-    target:
-      kind: Deployment
-      name: user-service
-
-  - patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 5
-    target:
-      kind: Deployment
-      name: request-service
-
-  # 生产环境标签
-  - patch: |-
-      - op: add
-        path: /spec/template/metadata/labels
-        value:
-          environment: production
-          tier: backend
-    target:
-      kind: Deployment
-      labelSelector: "tier=backend"
-
+  - ../../_shared
+  - ../../auth-service
+  - ../../user-service
+  - ../../content-service
+  - ../../request-service
+  - ../../safety-service
+  - ../../notification-service
+  - ../../payment-service
+  - ../../location-service
+  - ../../investment-service
+  - ../../rating-service
+  - ../../api-docs
+# 生產環境保持原有的副本數配置
+# 可以根據需要添加生產環境特定的 patches

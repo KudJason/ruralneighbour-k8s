@@ -1,9 +1,23 @@
 import os
 
 # Database configuration
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", "postgresql://devuser:devpass@postgres:5432/devdb"
-)
+def get_database_url():
+    """構建數據庫 URL 從環境變量"""
+    # 优先使用 DATABASE_URL 环境变量
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        return database_url
+    
+    # 如果没有 DATABASE_URL，则从分离的环境变量构建
+    db_user = os.getenv("POSTGRES_USER", "devuser")
+    db_password = os.getenv("POSTGRES_PASSWORD", "devpass")
+    db_host = os.getenv("POSTGRES_HOST", "postgres")
+    db_port = os.getenv("POSTGRES_PORT", "5432")
+    db_name = os.getenv("POSTGRES_DB", "devdb")
+    
+    return f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+
+DATABASE_URL = get_database_url()
 
 # Redis stream configuration
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")

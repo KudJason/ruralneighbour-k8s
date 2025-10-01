@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: rating-service
-  namespace: rural-neighbour
+  namespace: ruralneighbour-dev
   labels:
     app: rating-service
 spec:
@@ -14,9 +14,3 @@ spec:
       targetPort: 8000
       protocol: TCP
   type: ClusterIP
-
-
-
-
-
-

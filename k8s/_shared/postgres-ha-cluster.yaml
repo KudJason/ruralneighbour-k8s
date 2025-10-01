@@ -1,0 +1,29 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: rn-pg
+  namespace: ruralneighbour-dev
+spec:
+  instances: 2
+  # 使用包含 PostGIS 的官方镜像
+  imageName: ghcr.io/cloudnative-pg/postgis:16
+  enableSuperuserAccess: true
+  storage:
+    size: 10Gi
+  bootstrap:
+    initdb:
+      database: postgres
+      postInitApplicationSQL:
+        - CREATE USER neighbor WITH PASSWORD 'password'
+        - ALTER USER neighbor CREATEDB CREATEROLE
+        - CREATE DATABASE auth_db OWNER neighbor
+        - CREATE DATABASE user_db OWNER neighbor
+        - CREATE DATABASE location_db OWNER neighbor
+        - CREATE DATABASE content_db OWNER neighbor
+        - CREATE DATABASE request_db OWNER neighbor
+        - CREATE DATABASE notification_db OWNER neighbor
+        - CREATE DATABASE payment_db OWNER neighbor
+        - CREATE DATABASE rating_db OWNER neighbor
+        - CREATE DATABASE safety_db OWNER neighbor
+  monitoring:
+    enablePodMonitor: false

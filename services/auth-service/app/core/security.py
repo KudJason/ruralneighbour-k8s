@@ -4,7 +4,14 @@ from jose import jwt
 from typing import Any, Union, Optional
 from .config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Configure CryptContext to use bcrypt with explicit backend
+# This prevents passlib from running internal tests that may fail with bcrypt 4+
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__default_rounds=12,
+    bcrypt__ident="2b"  # Use standard bcrypt identifier
+)
 
 SECRET_KEY = settings.secret_key
 ALGORITHM = settings.algorithm
@@ -12,10 +19,17 @@ ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
+    # bcrypt has a 72-byte limit, truncate if necessary
+    if len(plain_password.encode('utf-8')) > 72:
+        plain_password = plain_password[:72]
     return pwd_context.verify(plain_password, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
+    # bcrypt has a 72-byte limit, truncate if necessary
+    # This ensures compatibility with both old and new bcrypt versions
+    if len(password.encode('utf-8')) > 72:
+        password = password[:72]
     return pwd_context.hash(password)
 
 

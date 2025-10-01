@@ -1,10 +1,18 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+namespace: ruralneighbour-dev
+
 resources:
+  # Infrastructure
+  - _shared/postgres-ha-cluster.yaml
+  - _shared/redis-deployment.yaml
+  - _shared/redis-service.yaml
   - _shared/ingress.yaml
   - _shared/postgres-secrets.yaml
   - _shared/redis-secrets.yaml
+
+  # Core Services
   - auth-service/deployment.yaml
   - auth-service/service.yaml
   - auth-service/secrets.yaml
@@ -12,6 +20,8 @@ resources:
   - user-service/service.yaml
   - request-service/deployment.yaml
   - request-service/service.yaml
+
+  # Business Services
   - payment-service/deployment.yaml
   - payment-service/service.yaml
   - notification-service/deployment.yaml
@@ -26,9 +36,8 @@ resources:
   - investment-service/service.yaml
   - rating-service/deployment.yaml
   - rating-service/secret.yaml
+
+  # API Documentation
   - api-docs/deployment.yaml
   - api-docs/service.yaml
   - api-docs/swagger-ui-configmap.yaml
-
-
-

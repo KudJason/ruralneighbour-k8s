@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: auth-health
-  namespace: default
+  namespace: ruralneighbour-dev
 spec:
   backoffLimit: 0
   template:
@@ -28,6 +28,14 @@ spec:
                 sleep 2;
               done;
               echo "Auth health check failed" && cat /tmp/out && exit 1;
+
+
+
+
+
+
+
+
 
 
 

@@ -1,0 +1,153 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-docs-redoc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-docs-redoc
+  template:
+    metadata:
+      labels:
+        app: api-docs-redoc
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: redoc-config
+              mountPath: /usr/share/nginx/html/index.html
+              subPath: index.html
+      volumes:
+        - name: redoc-config
+          configMap:
+            name: redoc-config
+            items:
+              - key: index.html
+                path: index.html
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redoc-config
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Rural Neighbour API Documentation</title>
+        <script src="https://cdn.jsdelivr.net/npm/redoc@latest/bundles/redoc.standalone.js"></script>
+        <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; margin: 0; padding: 0; }
+            #fallback-msg { padding: 12px 16px; background: #fff3cd; color: #8a6d3b; border-bottom: 1px solid #ffeeba; display: none; }
+            .toolbar { display:flex; gap:8px; align-items:center; padding: 10px; border-bottom: 1px solid #eee; background:#fafafa; }
+            select, button { padding: 6px 10px; }
+            .section { border-top: 1px solid #eee; margin-top: 12px; padding-top: 12px; }
+        </style>
+    </head>
+    <body>
+        <div class="toolbar">
+            <label for="spec-select">API:</label>
+            <select id="spec-select">
+                <option value="/openapi/auth.json">Auth</option>
+                <option value="/openapi/users.json">Users</option>
+                <option value="/openapi/requests.json">Requests</option>
+                <option value="/openapi/investments.json">Investments</option>
+                <option value="/openapi/content.json">Content</option>
+                <option value="/openapi/safety.json">Safety</option>
+                <option value="/openapi/locations.json">Locations</option>
+                <option value="/openapi/notifications.json">Notifications</option>
+                <option value="/openapi/payments.json">Payments</option>
+                <option value="/openapi/rating.json">Rating</option>
+            </select>
+            <button id="reload-btn">Load</button>
+            <button id="show-all-btn">Show All</button>
+        </div>
+        <div id="fallback-msg">Unable to load ReDoc UI from CDN. Please check network access to cdn.jsdelivr.net. OpenAPI JSON: <a href="/openapi/auth.json">/openapi/auth.json</a></div>
+        <div id="redoc-container"></div>
+        <script>
+            (function() {
+                function showFallback() {
+                    var f = document.getElementById('fallback-msg');
+                    if (f) { f.style.display = 'block'; }
+                }
+                try {
+                    const mount = document.getElementById('redoc-container');
+                    const select = document.getElementById('spec-select');
+                    const reloadBtn = document.getElementById('reload-btn');
+                    const showAllBtn = document.getElementById('show-all-btn');
+
+                    const specs = [
+                        { name: 'Auth', url: '/openapi/auth.json' },
+                        { name: 'Users', url: '/openapi/users.json' },
+                        { name: 'Requests', url: '/openapi/requests.json' },
+                        { name: 'Investments', url: '/openapi/investments.json' },
+                        { name: 'Content', url: '/openapi/content.json' },
+                        { name: 'Safety', url: '/openapi/safety.json' },
+                        { name: 'Locations', url: '/openapi/locations.json' },
+                        { name: 'Notifications', url: '/openapi/notifications.json' },
+                        { name: 'Payments', url: '/openapi/payments.json' },
+                        { name: 'Rating', url: '/openapi/rating.json' }
+                    ];
+
+                    function loadSpec(url) {
+                        Redoc.init(url, {
+                            theme: { colors: { primary: { main: '#3498db' } } },
+                            scrollYOffset: 0,
+                            hideDownloadButton: false,
+                            hideHostname: false
+                        }, mount);
+                    }
+                    function loadAll() {
+                        mount.innerHTML = '';
+                        specs.forEach(function(s) {
+                            const section = document.createElement('div');
+                            section.className = 'section';
+                            const title = document.createElement('h2');
+                            title.textContent = s.name;
+                            section.appendChild(title);
+                            const holder = document.createElement('div');
+                            section.appendChild(holder);
+                            mount.appendChild(section);
+                            Redoc.init(s.url, {
+                                theme: { colors: { primary: { main: '#3498db' } } },
+                                scrollYOffset: 0,
+                                hideDownloadButton: false,
+                                hideHostname: false
+                            }, holder);
+                        });
+                    }
+                    if (window.Redoc && typeof window.Redoc.init === 'function') {
+                        loadSpec(select.value);
+                        reloadBtn.addEventListener('click', function() { loadSpec(select.value); });
+                        showAllBtn.addEventListener('click', function() { loadAll(); });
+                    } else {
+                        // Script not loaded yet; give it a moment
+                        setTimeout(function() {
+                            if (!(window.Redoc && typeof window.Redoc.init === 'function')) {
+                                showFallback();
+                            }
+                        }, 1500);
+                    }
+                } catch (e) {
+                    showFallback();
+                }
+            })();
+        </script>
+    </body>
+    </html>
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-docs-redoc
+spec:
+  selector:
+    app: api-docs-redoc
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP

@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-docs-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-docs-generator
+  template:
+    metadata:
+      labels:
+        app: api-docs-generator
+    spec:
+      containers:
+        - name: generator
+          image: openapitools/openapi-generator-cli:latest
+          ports:
+            - containerPort: 8080
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - |
+              # 下載所有 OpenAPI 文件 - 使用内部服务发现
+              curl -o auth.json http://auth-service/openapi.json
+              curl -o users.json http://user-service/openapi.json
+              curl -o requests.json http://request-service/openapi.json
+              curl -o investments.json http://investment-service/openapi.json
+              curl -o content.json http://content-service/openapi.json
+              curl -o safety.json http://safety-service/openapi.json
+              curl -o locations.json http://location-service/openapi.json
+              curl -o notifications.json http://notification-service/openapi.json
+              curl -o payments.json http://payment-service/openapi.json
+              curl -o rating.json http://rating-service/openapi.json
+
+              # 生成統一的 HTML 文檔
+              java -jar /opt/openapi-generator/modules/openapi-generator-cli/target/openapi-generator-cli.jar \
+                generate -i auth.json -g html2 -o /tmp/docs/auth
+
+              # 啟動簡單的 HTTP 服務
+              cd /tmp/docs && python3 -m http.server 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-docs-generator
+spec:
+  selector:
+    app: api-docs-generator
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP

@@ -2,13 +2,13 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: safety-service
-  namespace: default
+  namespace: ruralneighbour-dev
   labels:
     app: safety-service
     tier: backend
     version: v1
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: safety-service
@@ -45,7 +45,7 @@ spec:
               until pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER"; do echo waiting for postgres; sleep 2; done
       containers:
         - name: safety-service
-          image: neighbor-connect/safety-service:latest
+          image: 127.0.0.1:32000/ruralneighbour/safety-service:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
@@ -78,6 +78,25 @@ spec:
                   key: safety-db
             - name: DATABASE_URL
               value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/$(POSTGRES_DB)"
+            # Redis configuration for event publishing
+            - name: REDIS_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: redis-secrets
+                  key: redis-host
+            - name: REDIS_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: redis-secrets
+                  key: redis-port
+            - name: REDIS_URL
+              value: "redis://redis-service:6379"
+            # Event streams configuration
+            - name: SAFETY_LIFECYCLE_STREAM
+              valueFrom:
+                configMapKeyRef:
+                  name: redis-config
+                  key: safety-lifecycle-stream
             # Environment
             - name: ENVIRONMENT
               value: "production"

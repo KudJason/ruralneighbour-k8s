@@ -1,0 +1,136 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: swagger-ui-config
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Swagger UI</title>
+      <base href="/api-docs/">
+      <link rel="stylesheet" type="text/css" href="swagger-ui.css" />
+      <link rel="icon" type="image/png" href="favicon-32x32.png" sizes="32x32" />
+      <link rel="icon" type="image/png" href="favicon-16x16.png" sizes="16x16" />
+      <style>
+        html { box-sizing: border-box; overflow-y: scroll; }
+        *, *:before, *:after { box-sizing: inherit; }
+        body { margin:0; background: #fafafa; }
+      </style>
+    </head>
+    <body>
+      <div class="toolbar" style="padding:10px;border-bottom:1px solid #eee;background:#fafafa;display:flex;gap:8px;align-items:center;">
+        <label for="spec-select">API:</label>
+        <select id="spec-select">
+          <option value="/openapi/auth.json">Auth</option>
+          <option value="/openapi/users.json">Users</option>
+          <option value="/openapi/requests.json">Requests</option>
+          <option value="/openapi/investments.json">Investments</option>
+          <option value="/openapi/content.json">Content</option>
+          <option value="/openapi/safety.json">Safety</option>
+          <option value="/openapi/locations.json">Locations</option>
+          <option value="/openapi/notifications.json">Notifications</option>
+          <option value="/openapi/payments.json">Payments</option>
+          <option value="/openapi/rating.json">Rating</option>
+        </select>
+        <button id="reload-btn">Load</button>
+        <button id="show-all-btn">Show All</button>
+      </div>
+      <div id="swagger-ui"></div>
+      <script src="swagger-ui-bundle.js" crossorigin></script>
+      <script src="swagger-ui-standalone-preset.js" crossorigin></script>
+      <script src="swagger-initializer.js"></script>
+      <script>
+        (function(){
+          function mountSingle(url){
+            window.ui = SwaggerUIBundle({
+              dom_id: '#swagger-ui',
+              validatorUrl: null,
+              deepLinking: true,
+              presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+              plugins: [SwaggerUIBundle.plugins.DownloadUrl],
+              layout: 'StandaloneLayout',
+              urls: [{name: 'Selected', url}]
+            });
+          }
+          function mountAll(){
+            const container = document.getElementById('swagger-ui');
+            container.innerHTML = '';
+            const specs = [
+              { name: 'Auth', url: '/openapi/auth.json' },
+              { name: 'Users', url: '/openapi/users.json' },
+              { name: 'Requests', url: '/openapi/requests.json' },
+              { name: 'Investments', url: '/openapi/investments.json' },
+              { name: 'Content', url: '/openapi/content.json' },
+              { name: 'Safety', url: '/openapi/safety.json' },
+              { name: 'Locations', url: '/openapi/locations.json' },
+              { name: 'Notifications', url: '/openapi/notifications.json' },
+              { name: 'Payments', url: '/openapi/payments.json' },
+              { name: 'Rating', url: '/openapi/rating.json' }
+            ];
+            specs.forEach(function(s){
+              const section = document.createElement('div');
+              section.style.borderTop = '1px solid #eee'; section.style.marginTop = '12px'; section.style.paddingTop = '12px';
+              const title = document.createElement('h2'); title.textContent = s.name; section.appendChild(title);
+              const holder = document.createElement('div'); holder.id = 'holder-' + s.name.toLowerCase(); section.appendChild(holder);
+              container.appendChild(section);
+              SwaggerUIBundle({
+                dom_id: '#' + holder.id,
+                validatorUrl: null,
+                deepLinking: true,
+                presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+                plugins: [SwaggerUIBundle.plugins.DownloadUrl],
+                layout: 'StandaloneLayout',
+                urls: [{name:s.name, url:s.url}]
+              });
+            });
+          }
+          window.addEventListener('load', function(){
+            const select = document.getElementById('spec-select');
+            const reloadBtn = document.getElementById('reload-btn');
+            const showAllBtn = document.getElementById('show-all-btn');
+            mountSingle(select.value);
+            reloadBtn.addEventListener('click', function(){ mountSingle(select.value); });
+            showAllBtn.addEventListener('click', function(){ mountAll(); });
+          });
+        })();
+      </script>
+    </body>
+    </html>
+  swagger-initializer.js: |
+    window.onload = function() {
+      window.ui = SwaggerUIBundle({
+        dom_id: '#swagger-ui',
+        validatorUrl: null,
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        plugins: [
+          SwaggerUIBundle.plugins.DownloadUrl
+        ],
+        layout: 'StandaloneLayout',
+        urls: [
+          { name: 'Auth Service', url: '/openapi/auth.json' },
+          { name: 'User Service', url: '/openapi/users.json' },
+          { name: 'Request Service', url: '/openapi/requests.json' },
+          { name: 'Investment Service', url: '/openapi/investments.json' },
+          { name: 'Content Service', url: '/openapi/content.json' },
+          { name: 'Safety Service', url: '/openapi/safety.json' },
+          { name: 'Location Service', url: '/openapi/locations.json' },
+          { name: 'Notification Service', url: '/openapi/notifications.json' },
+          { name: 'Payment Service', url: '/openapi/payments.json' },
+          { name: 'Rating Service', url: '/openapi/rating.json' }
+        ],
+        'urls.primaryName': 'Auth Service',
+        onComplete: function() {
+          console.log('Swagger UI loaded successfully');
+        },
+        onFailure: function(error) {
+          console.error('Swagger UI failed to load:', error);
+        }
+      })
+    }

@@ -1,0 +1,38 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-docs-redirect
+  namespace: ruralneighbour-dev
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/temporal-redirect: "true"
+spec:
+  rules:
+    - http:
+        paths:
+          # Redirect /api-docs -> /api-docs/
+          - path: /api-docs
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: api-docs
+                port:
+                  number: 80
+          # Redirect /api-docs-scalar -> /api-docs-scalar/
+          - path: /api-docs-scalar
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: api-docs-scalar
+                port:
+                  number: 80
+          # Redirect /api-docs-redoc -> /api-docs-redoc/
+          - path: /api-docs-redoc
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: api-docs-redoc
+                port:
+                  number: 80

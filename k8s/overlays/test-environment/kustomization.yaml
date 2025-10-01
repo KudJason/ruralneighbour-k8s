@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: ruralneighbour-dev
+
+resources:
+  - ../../_shared
+  - ../../auth-service
+  - ../../user-service
+  - ../../content-service
+  - ../../request-service
+  - ../../safety-service
+  - ../../notification-service
+  - ../../payment-service
+  - ../../location-service
+  - ../../investment-service
+  - ../../rating-service
+  - ../../api-docs

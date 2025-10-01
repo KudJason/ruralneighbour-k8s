@@ -1,7 +1,8 @@
-from pydantic import BaseModel, EmailStr
+from datetime import datetime
 from typing import Optional
 from uuid import UUID
-from datetime import datetime
+
+from pydantic import BaseModel, EmailStr
 
 
 class UserBase(BaseModel):
@@ -28,3 +29,12 @@ class UserOut(UserBase):
 
     class Config:
         orm_mode = True
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str

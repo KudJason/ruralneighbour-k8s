@@ -2,12 +2,12 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: payment-service
-  namespace: default
+  namespace: ruralneighbour-dev
   labels:
     app: payment-service
     tier: backend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: payment-service
@@ -18,14 +18,12 @@ spec:
     spec:
       containers:
         - name: payment-service
-          image: neighbor-connect/payment-service:latest
-          imagePullPolicy: IfNotPresent
+          image: 127.0.0.1:32000/ruralneighbour/payment-service:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000
           env:
             # Database configuration
-            - name: DATABASE_URL
-              value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/$(POSTGRES_DB)"
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
@@ -51,9 +49,12 @@ spec:
                 configMapKeyRef:
                   name: postgres-config
                   key: payment-db
+            # Combined DATABASE_URL for SQLAlchemy
+            - name: DATABASE_URL
+              value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/$(POSTGRES_DB)"
             # Redis configuration
             - name: REDIS_URL
-              value: "redis://$(REDIS_HOST):$(REDIS_PORT)"
+              value: "redis://redis-service:6379"
             - name: REDIS_HOST
               valueFrom:
                 secretKeyRef:
@@ -71,9 +72,25 @@ spec:
               value: "HS256"
             # Payment configuration
             - name: STRIPE_SECRET_KEY
-              value: "sk_test_your_stripe_secret_key"
+              valueFrom:
+                secretKeyRef:
+                  name: stripe-secrets
+                  key: secret-key
             - name: STRIPE_PUBLISHABLE_KEY
-              value: "pk_test_your_stripe_publishable_key"
+              valueFrom:
+                secretKeyRef:
+                  name: stripe-secrets
+                  key: publishable-key
+            - name: PAYPAL_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: paypal-secrets
+                  key: client-id
+            - name: PAYPAL_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: paypal-secrets
+                  key: client-secret
             - name: WEBHOOK_SECRET
               value: "whsec_your_webhook_secret"
             # Service URLs

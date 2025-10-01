@@ -1,6 +1,8 @@
-from sqlalchemy import Column, String, Boolean, TIMESTAMP, func
-from sqlalchemy.dialects.postgresql import UUID
 import uuid
+
+from sqlalchemy import TIMESTAMP, Boolean, Column, String, func
+from sqlalchemy.dialects.postgresql import UUID
+
 from ..db.base import Base
 
 
@@ -18,4 +20,7 @@ class User(Base):
         TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now()
     )
     last_login = Column(TIMESTAMP(timezone=True))
+    # Password reset fields
+    reset_token = Column(String(255), nullable=True)
+    reset_token_expires = Column(TIMESTAMP(timezone=True), nullable=True)
     # default_mode omitted for simplicity, add if user_mode type is defined

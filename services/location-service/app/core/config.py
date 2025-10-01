@@ -2,9 +2,17 @@ import os
 from typing import Optional
 
 # Database configuration
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", "postgresql://devuser:devpass@postgres:5432/locationdb"
-)
+def get_database_url():
+    """構建數據庫 URL 從環境變量"""
+    db_user = os.getenv("POSTGRES_USER", "devuser")
+    db_password = os.getenv("POSTGRES_PASSWORD", "devpass")
+    db_host = os.getenv("POSTGRES_HOST", "postgres")
+    db_port = os.getenv("POSTGRES_PORT", "5432")
+    db_name = os.getenv("POSTGRES_DB", "locationdb")
+    
+    return f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+
+DATABASE_URL = get_database_url()
 
 # Service configuration constants
 RESTRICTED_CITY_POPULATION_THRESHOLD = int(

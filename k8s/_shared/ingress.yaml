@@ -2,19 +2,21 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: neighbor-connect-ingress
-  namespace: default
+  namespace: ruralneighbour-dev
   annotations:
     nginx.ingress.kubernetes.io/cors-allow-origin: "*"
     nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
     nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
     nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/add-base-url: "true"
 spec:
   rules:
     - http:
         paths:
           # Auth Service
-          - path: /api/v1/auth
-            pathType: Prefix
+          - path: /api/v1/auth(/.*)?
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: auth-service
@@ -22,8 +24,8 @@ spec:
                   number: 80
 
           # User Service
-          - path: /api/v1/users
-            pathType: Prefix
+          - path: /api/v1/users(/.*)?
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: user-service
@@ -31,8 +33,8 @@ spec:
                   number: 80
 
           # Location Service
-          - path: /api/v1/locations
-            pathType: Prefix
+          - path: /api/v1/locations(/.*)?
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: location-service
@@ -40,8 +42,8 @@ spec:
                   number: 80
 
           # Request Service
-          - path: /api/v1/requests
-            pathType: Prefix
+          - path: /api/v1/requests(/.*)?
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: request-service
@@ -49,8 +51,8 @@ spec:
                   number: 80
 
           # Payment Service
-          - path: /api/v1/payments
-            pathType: Prefix
+          - path: /api/v1/payments(/.*)?
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: payment-service
@@ -58,8 +60,8 @@ spec:
                   number: 80
 
           # Notification Service
-          - path: /api/v1/notifications
-            pathType: Prefix
+          - path: /api/v1/notifications(/.*)?
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: notification-service
@@ -67,8 +69,8 @@ spec:
                   number: 80
 
           # Content Service
-          - path: /api/v1/content
-            pathType: Prefix
+          - path: /api/v1/content(/.*)?
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: content-service
@@ -76,8 +78,8 @@ spec:
                   number: 80
 
           # Investment Service
-          - path: /api/v1/investments
-            pathType: Prefix
+          - path: /api/v1/investments(/.*)?
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: investment-service
@@ -85,8 +87,8 @@ spec:
                   number: 80
 
           # Safety Service
-          - path: /api/v1/safety
-            pathType: Prefix
+          - path: /api/v1/safety(/.*)?
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: safety-service
@@ -105,10 +107,28 @@ spec:
                   number: 80
 
           # API Docs Portal (Swagger UI aggregator)
-          - path: /api-docs
-            pathType: Prefix
+          - path: /api-docs(?:/(.*))?
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: api-docs
+                port:
+                  number: 80
+
+          # Scalar API Documentation
+          - path: /api-docs-scalar(?:/(.*))?
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: api-docs-scalar
+                port:
+                  number: 80
+
+          # Redoc API Documentation
+          - path: /api-docs-redoc(?:/(.*))?
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: api-docs-redoc
                 port:
                   number: 80
